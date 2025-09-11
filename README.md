@@ -1,1 +1,1 @@
-# MinimumAEC
+# minAEC
