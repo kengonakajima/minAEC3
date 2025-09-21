@@ -19,7 +19,25 @@
 #include "subtractor_output.h"
  
 
+ // FFT 復元から予測誤差を計算するヘルパー。
+inline void PredictionError(const Aec3Fft& fft,
+                            const FftData& S,
+                            std::span<const float> y,
+                            std::array<float, kBlockSize>* e,
+                            std::array<float, kBlockSize>* s) {
+  std::array<float, kFftLength> tmp;
+  fft.Ifft(S, &tmp);
+  const float kScale = 1.0f / static_cast<float>(kFftLengthBy2);
+  std::transform(y.begin(), y.end(), tmp.begin() + kFftLengthBy2, e->begin(),
+                 [&](float a, float b) { return a - b * kScale; });
+  if (s) {
+    for (size_t k = 0; k < s->size(); ++k) {
+      (*s)[k] = kScale * tmp[k + kFftLengthBy2];
+    }
+  }
+}
  
+
 
 // Proves linear echo cancellation functionality
 struct Subtractor {
@@ -57,17 +75,7 @@ struct Subtractor {
 
       // 線形フィルタの出力を形成。
       filter_.Filter(render_buffer, &S);
-      // PredictionError inline
-      {
-        std::array<float, kFftLength> tmp;
-        fft_.Ifft(S, &tmp);
-        const float kScale = 1.0f / static_cast<float>(kFftLengthBy2);
-        std::transform(y.begin(), y.end(), tmp.begin() + kFftLengthBy2, e.begin(),
-                       [&](float a, float b) { return a - b * kScale; });
-        for (size_t k = 0; k < out.s.size(); ++k) {
-          out.s[k] = kScale * tmp[k + kFftLengthBy2];
-        }
-      }
+      PredictionError(fft_, S, y, &e, &out.s);
 
       // Compute the signal powers in the subtractor output.
       out.ComputeMetrics(y);

@@ -40,20 +40,16 @@ struct BlockProcessor {
     }
     render_event_ = RenderDelayBuffer::kNone;
 
-    RenderDelayBuffer::BufferingEvent buffer_event =
-        render_buffer_.PrepareCaptureProcessing();
+    RenderDelayBuffer::BufferingEvent buffer_event = render_buffer_.PrepareCaptureProcessing();
     if (buffer_event == RenderDelayBuffer::kRenderUnderrun) {
       delay_estimator_.Reset();
     }
 
-    {
-      int d_samples =
-          delay_estimator_.EstimateDelay(render_buffer_.GetDownsampledRenderBuffer(), *capture_block);
-      if (d_samples >= 0) {
+    int d_samples = delay_estimator_.EstimateDelay(render_buffer_.GetDownsampledRenderBuffer(), *capture_block);
+    if (d_samples >= 0) {
         estimated_delay_blocks_ = static_cast<int>(d_samples >> kBlockSizeLog2);
-      } else {
+    } else {
         estimated_delay_blocks_ = -1;
-      }
     }
 
     if (estimated_delay_blocks_ >= 0) {
@@ -77,10 +73,8 @@ struct BlockProcessor {
   // 線形/非線形の有効・無効を設定（EchoRemoverへ委譲）
   void SetProcessingModes(bool enable_linear_filter,
                           bool enable_nonlinear_suppressor) {
-    echo_remover_.SetProcessingModes(enable_linear_filter,
-                                     enable_nonlinear_suppressor);
+    echo_remover_.SetProcessingModes(enable_linear_filter, enable_nonlinear_suppressor);
   }
-
 
   bool capture_properly_started_ = false;
   bool render_properly_started_ = false;
