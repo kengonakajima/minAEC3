@@ -22,16 +22,9 @@ CPPFLAGS=$(INCFLAGS) -std=c++20 $(PFFLAGS) -g -O3 -mmacosx-version-min=10.13 $(W
 CFLAGS=$(INCFLAGS) -std=c11 $(PFFLAGS) -g -O3 -mmacosx-version-min=10.13 $(WARN_C)
 
 
-OBJS=ooura_fft.o
-
-all: libaec3.a echoback cancel_file
+all: echoback cancel_file
 	rm -f *.tmp
 
-
-
-libaec3.a : $(OBJS)
-	$(AR) cr libaec3.a $(OBJS)
-	$(RANLIB) libaec3.a
 
 
 PORTAUDIO_HOME?=$(HOME)/portaudio
@@ -41,21 +34,21 @@ PA_FALLBACK_LIBDIR1=/opt/homebrew/opt/portaudio/lib
 PA_FALLBACK_LIBDIR2=/usr/local/lib
 
 # Echoback: port of echoback.js (local echo loop + AEC3)
-echoback: echoback.cc libaec3.a libportaudio.a
+echoback: echoback.cc libportaudio.a
 	$(CXX) -o echoback $(CPPFLAGS) -I$(PORTAUDIO_HOME)/include -I$(PA_FALLBACK_INCDIR1) -I$(PA_FALLBACK_INCDIR2) -I$(PORTAUDIO_HOME) \
-		echoback.cc libaec3.a \
+		echoback.cc \
 		-L$(PORTAUDIO_HOME) -L$(PORTAUDIO_HOME)/lib -L$(PA_FALLBACK_LIBDIR1) -L$(PA_FALLBACK_LIBDIR2) \
 		-Wl,-rpath,$(PORTAUDIO_HOME) -Wl,-rpath,$(PORTAUDIO_HOME)/lib -Wl,-rpath,$(PA_FALLBACK_LIBDIR1) -Wl,-rpath,$(PA_FALLBACK_LIBDIR2) \
 		./libportaudio.a -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreServices 
 
 # Offline comparator (no PortAudio)
-cancel_file: cancel_file.cc libaec3.a
-	$(CXX) -o cancel_file $(CPPFLAGS) cancel_file.cc libaec3.a
+cancel_file: cancel_file.cc
+	$(CXX) -o cancel_file $(CPPFLAGS) cancel_file.cc
 
 .PHONY: clean wasm
 clean:
 	# Object files and primary libraries (keep prebuilt libportaudio.a)
-	rm -f *.o libaec3.a libaec3_*.a
+	rm -f *.o 
 	# Executables produced by this Makefile
 	rm -f echoback cancel_file
 	# Debug symbol bundles and temp files
