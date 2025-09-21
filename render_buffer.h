@@ -1,7 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <span>
- 
 
 // Provides a buffer of the render data for the echo remover.
 struct RenderBuffer {

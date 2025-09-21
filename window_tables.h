@@ -1,4 +1,4 @@
-#include <array>
+
 
 // sqrt-Hanning window for 128-point OLA analysis/synthesis.
 inline constexpr std::array<float, kFftLength> kSqrtHanning128 = {

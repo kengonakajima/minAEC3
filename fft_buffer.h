@@ -1,6 +1,3 @@
-#include <stddef.h>
-#include <vector>
- 
 
 // Struct for bundling a circular buffer of FftData objects together with the
 // read and write indices.

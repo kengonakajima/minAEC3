@@ -1,7 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <vector>
- 
 
 // Struct for bundling a circular buffer of one dimensional vector objects
 // together with the read and write indices.

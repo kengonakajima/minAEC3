@@ -1,9 +1,3 @@
-#include <stddef.h>
-#include <vector>
-#include <algorithm>
-#include <functional>
-#include <span>
-
  
 
 struct MovingAverage {

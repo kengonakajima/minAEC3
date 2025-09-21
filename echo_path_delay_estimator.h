@@ -1,7 +1,3 @@
-#include <stddef.h>
-#include <span>
-#include <array>
- 
 
 // Estimates the delay of the echo path.
 struct EchoPathDelayEstimator {

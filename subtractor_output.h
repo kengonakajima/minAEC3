@@ -1,7 +1,3 @@
-#include <array>
-#include <numeric>
-#include <span>
- 
 
 // Stores the values being returned from the echo subtractor for a single
 // capture channel.

@@ -1,9 +1,3 @@
-#include <stddef.h>
-#include <stdint.h>
-
-#include <vector>
-#include <algorithm>
-#include <cmath>
 
 
 // Stores any audio data in a way that allows the audio processing module to

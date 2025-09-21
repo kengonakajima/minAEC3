@@ -1,6 +1,3 @@
-#include <stddef.h>
-#include <algorithm>
- 
 
 // Performs echo cancellation on 64-sample blocks.
 struct BlockProcessor {

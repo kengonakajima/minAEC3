@@ -1,9 +1,3 @@
-#include <stddef.h>
-#include <algorithm>
-#include <deque>
-#include <span>
-
- 
 
 // Main class for the echo canceller3.
 // It does 4 things:

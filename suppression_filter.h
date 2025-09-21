@@ -1,5 +1,3 @@
-#include <array>
-#include <algorithm>
 
 struct SuppressionFilter {
   SuppressionFilter() : fft_() { e_output_old_.fill(0.f); }

@@ -1,9 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <vector>
-#include <algorithm>
-#include <span>
- 
 
  // FFT 復元から予測誤差を計算するヘルパー。
 inline void PredictionError(const Aec3Fft& fft,

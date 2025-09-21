@@ -1,8 +1,3 @@
-#include <array>
-#include <algorithm>
-#include <cmath>
-#include <span>
-
 
 struct SuppressionGain {
   SuppressionGain()
@@ -11,7 +6,6 @@ struct SuppressionGain {
         nearend_smoother_{kFftLengthBy2Plus1, 4} {
     last_gain_.fill(1.f);
   }
-  
 
 
   void GetGain(

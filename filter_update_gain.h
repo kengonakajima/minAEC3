@@ -1,8 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <algorithm>
-#include <span>
-
 
 // 自己回帰型の線形フィルタ更新ゲインを計算する。
 struct FilterUpdateGain {

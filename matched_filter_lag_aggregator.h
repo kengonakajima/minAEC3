@@ -1,8 +1,3 @@
-#include <vector>
-#include <array>
-#include <algorithm>
-#include <span>
- 
 
 // Aggregates lag estimates produced by the MatchedFilter class into a single
 // reliable combined lag estimate.

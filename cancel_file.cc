@@ -1,44 +1,5 @@
 // Offline comparator: feed two WAVs (render x, capture y) into AEC3 and print metrics per block
-#include <cstdio>
-#include <cstdint>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <cstring>
-
-#include "aec3_common.h"
-#include "block.h"
-#include "ring_index.h"
-#include "block_buffer.h"
-#include "fft_data.h"
-#include "fft_buffer.h"
-#include "spectrum_buffer.h"
-#include "render_buffer.h"
-#include "window_tables.h"
-#include "ooura_fft.h"
-#include "aec3_fft.h"
-#include "decimator.h"
-#include "downsampled_render_buffer.h"
-#include "render_delay_buffer.h"
-#include "matched_filter.h"
-#include "matched_filter_lag_aggregator.h"
-#include "echo_path_delay_estimator.h"
-#include "echo_path_variability.h"
-#include "subtractor_output.h"
-#include "erle_estimator.h"
-#include "subtractor_output_analyzer.h"
-#include "aec_state.h"
-#include "adaptive_fir_filter.h"
-#include "filter_update_gain.h"
-#include "subtractor.h"
-#include "moving_average.h"
-#include "suppression_filter.h"
-#include "suppression_gain.h"
-#include "residual_echo_estimator.h"
-#include "echo_remover.h"
-#include "block_processor.h"
-#include "audio_buffer.h"
-#include "echo_canceller3.h"
+#include "all.h"
 
 struct Wav {
   int sr = 0;

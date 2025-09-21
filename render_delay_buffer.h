@@ -1,6 +1,3 @@
-#include <stddef.h>
-#include <vector>
-#include <algorithm>
  
 
 // Buffers incoming render blocks and allows extraction with a specified delay.

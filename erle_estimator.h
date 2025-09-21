@@ -1,7 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <algorithm>
-
  
 
 // Estimates the echo return loss enhancement. One estimate is done per subband

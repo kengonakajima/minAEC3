@@ -1,6 +1,3 @@
-#include <stddef.h>
-#include <vector>
- 
 
 // Struct for bundling a circular buffer of two dimensional vector objects
 // together with the read and write indices.

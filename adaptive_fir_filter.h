@@ -1,9 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <vector>
-#include <algorithm>
-#include <functional>
-#include <span>
 
  
 // Computes and stores the frequency response of the filter.

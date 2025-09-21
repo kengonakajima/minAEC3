@@ -1,8 +1,3 @@
-#include <stddef.h>
-#include <array>
-#include <numeric>
-#include <algorithm>
- 
 
 // Echo remover の動作状態を管理。
 struct AecState {

@@ -1,6 +1,3 @@
-#include <array>
-#include <span>
- 
 
 // Contains 4 milliseconds of mono audio data.
 // Single-band, sampling rate 16 kHz 固定。
@@ -9,8 +6,6 @@ struct Block {
       : data_{} {
     data_.fill(default_value);
   }
-
-  // 1ch固定、サイズは常にkBlockSize。
 
   // Iterators for accessing the data.
   auto begin() { return data_.begin(); }
@@ -29,8 +24,6 @@ struct Block {
   std::span<const float, kBlockSize> View() const {
     return std::span<const float, kBlockSize>(data_.data(), kBlockSize);
   }
-
-  // Swapは未使用のため削除。
 
   std::array<float, kBlockSize> data_;
 };

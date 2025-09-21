@@ -1,7 +1,3 @@
-#include <array>
-#include <algorithm>
-#include <span>
- 
 
 // Removes the echo from the capture signal.
 struct EchoRemover {

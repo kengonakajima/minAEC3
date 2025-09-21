@@ -1,7 +1,3 @@
-#include <array>
-#include <algorithm>
-#include <span>
- 
 
 struct ResidualEchoEstimator {
   // Class-wide constants

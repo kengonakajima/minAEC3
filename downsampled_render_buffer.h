@@ -1,5 +1,3 @@
-#include <stddef.h>
-#include <vector>
 
 // Holds the circular buffer of the downsampled render data.
 struct DownsampledRenderBuffer {

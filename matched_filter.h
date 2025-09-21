@@ -1,7 +1,4 @@
-#include <algorithm>
-#include <cstddef>
-#include <vector>
-#include <span>
+
  
 
 // Produces recursively updated cross-correlation estimates for several signal
