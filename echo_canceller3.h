@@ -1,15 +1,17 @@
-
-// Main class for the echo canceller3.
-// It does 4 things:
-// -Receives 64-sample mono blocks.
-// -Provides the lower level echo canceller functionality with the same
-//   64-sample block size throughout.
-// -Partially handles the jitter in the render and capture API
-// call sequence.
+// EchoCanceller3全体をまとめるクラス。
+// 主に次の4点を担当する:
+// - 64サンプルのモノラルブロックを受け取る。
+// - エコーキャンセラ下層の処理へ同じブロックサイズで渡す。
+// - Render/Capture API呼び出しのジッタを簡易的に吸収する。
+// - 内部状態を保持しながらエコー除去を実行する。
 //
 
 struct EchoCanceller3 {
-
+  std::deque<Block> render_transfer_queue_; // Render呼び出しから渡されるブロックを一時保持
+  BlockProcessor block_processor_; // ブロック単位でAEC処理を実行するコア
+  Block render_block_; // キューから取り出したレンダーデータのワーク領域
+  Block capture_block_; // エコー除去対象のキャプチャブロック
+    
   EchoCanceller3()
       : render_transfer_queue_(),
         block_processor_(),
@@ -17,9 +19,7 @@ struct EchoCanceller3 {
         capture_block_() {}
 
 
-
-  // Analyzes and stores an internal copy of the render signal (mono, 64-sample).
-  // Processes the capture signal (mono, 64-sample) to remove echo.
+  // レンダー信号を内部キューから取り込み、キャプチャ信号からエコーを除去する。
   void ProcessCapture(AudioBuffer* capture) {
     while (!render_transfer_queue_.empty()) {
       render_block_ = std::move(render_transfer_queue_.front());
@@ -35,7 +35,7 @@ struct EchoCanceller3 {
     std::copy(after.begin(), after.end(), out_ptr);
   }
 
-  // Analyzes and stores an internal copy of the render signal (mono, 64-sample).
+  // レンダー信号（64サンプル, モノラル）を解析して内部キューへ格納する。
   void AnalyzeRender(const AudioBuffer& render) {
     Block b;
     std::span<const float> buffer_view(render.mono_data_const(), kBlockSize);
@@ -48,17 +48,9 @@ struct EchoCanceller3 {
   }
 
   // 線形/非線形の有効・無効を設定（BlockProcessorへ委譲）
-  void SetProcessingModes(bool enable_linear_filter,
-                          bool enable_nonlinear_suppressor) {
-    block_processor_.SetProcessingModes(enable_linear_filter,
-                                        enable_nonlinear_suppressor);
+  void SetProcessingModes(bool enable_linear_filter, bool enable_nonlinear_suppressor) {
+    block_processor_.SetProcessingModes(enable_linear_filter, enable_nonlinear_suppressor);
   }
-
-  std::deque<Block> render_transfer_queue_;
-  BlockProcessor block_processor_;
-  Block render_block_;
-  Block capture_block_;
   
 };
  
-
