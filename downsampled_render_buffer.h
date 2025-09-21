@@ -1,7 +1,11 @@
-
 // Holds the circular buffer of the downsampled render data.
 struct DownsampledRenderBuffer {
-  explicit DownsampledRenderBuffer(size_t downsampled_buffer_size)
+  const int size; // TODO
+  std::vector<float> buffer; // TODO
+  int write = 0; // TODO
+  int read = 0; // TODO
+    
+  DownsampledRenderBuffer(size_t downsampled_buffer_size)
       : size(static_cast<int>(downsampled_buffer_size)),
         buffer(downsampled_buffer_size, 0.f) {
     std::fill(buffer.begin(), buffer.end(), 0.f);
@@ -22,11 +26,6 @@ struct DownsampledRenderBuffer {
   void UpdateReadIndex(int offset) { read = OffsetIndex(read, offset); }
   void IncReadIndex() { read = IncIndex(read); }
   void DecReadIndex() { read = DecIndex(read); }
-
-  const int size;
-  std::vector<float> buffer;
-  int write = 0;
-  int read = 0;
 };
 
 

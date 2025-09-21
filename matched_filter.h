@@ -12,7 +12,7 @@ struct MatchedFilter {
   // shift.
   struct LagEstimate {
     LagEstimate() = default;
-    explicit LagEstimate(size_t lag) : lag(lag) {}
+    LagEstimate(size_t lag) : lag(lag) {}
     size_t lag = 0;
   };
 

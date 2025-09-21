@@ -6,7 +6,7 @@ struct EchoPathVariability {
       kNewDetectedDelay
   };
 
-  explicit EchoPathVariability(DelayChange dc) : delay_change(dc) {}
+  EchoPathVariability(DelayChange dc) : delay_change(dc) {}
 
   bool DelayChanged() const { return delay_change != kNone; }
 

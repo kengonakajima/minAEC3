@@ -2,7 +2,7 @@
 // Aggregates lag estimates produced by the MatchedFilter class into a single
 // reliable combined lag estimate.
 struct MatchedFilterLagAggregator {
-  explicit MatchedFilterLagAggregator(size_t max_filter_lag)
+  MatchedFilterLagAggregator(size_t max_filter_lag)
       : thresholds_(),
         headroom_(static_cast<int>(32 / 4)),  // 64/4=16 samples -> headroom 8 blocks? simplified
         highest_peak_aggregator_(max_filter_lag) {}
@@ -36,7 +36,7 @@ struct MatchedFilterLagAggregator {
   // 最高ピークや信頼フラグの外部公開は削除。
 
   struct HighestPeakAggregator {
-    explicit HighestPeakAggregator(size_t max_filter_lag)
+    HighestPeakAggregator(size_t max_filter_lag)
         : histogram_(max_filter_lag + 1, 0) {
       histogram_data_.fill(0);
     }

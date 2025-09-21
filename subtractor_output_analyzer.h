@@ -4,8 +4,7 @@ struct SubtractorOutputAnalyzer {
     
   void HandleEchoPathChange() { filter_converged_ = false; }  
   // 減算器出力から収束判定を行う。
-  void Update(const SubtractorOutput& subtractor_output,
-              bool* any_filter_converged) {
+  void Update(const SubtractorOutput& subtractor_output, bool* any_filter_converged) {
     *any_filter_converged = false;
     const float y2 = subtractor_output.y2;
     const float e2 = subtractor_output.e2;

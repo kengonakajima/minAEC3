@@ -1,17 +1,13 @@
-
-
-// Stores any audio data in a way that allows the audio processing module to
-// operate on it in a controlled manner.
+// 音声処理モジュールが制御しながら操作できるように音声データを保持する。
 struct AudioBuffer {
+  std::vector<float> data_; // モノラルの時間領域サンプルデータ
 
   AudioBuffer() : data_(kBlockSize) {}
-
-
 
   float* mono_data() { return data_.data(); }
   const float* mono_data_const() const { return data_.data(); }
 
-  // Copies data into the buffer.
+  // 16bit PCMデータを内部バッファへコピーする。
   void CopyFrom(const int16_t* const src_data) {
     const int16_t* src = src_data;
     float* dst = mono_data();
@@ -20,7 +16,7 @@ struct AudioBuffer {
     }
   }
 
-  // Copies data from the buffer.
+  // 内部バッファの内容を16bit PCMとして書き出す。
   void CopyTo(int16_t* const dst_data) {
     int16_t* out = dst_data;
     const float* mono_ptr = mono_data_const();
@@ -31,12 +27,6 @@ struct AudioBuffer {
       out[j] = static_cast<int16_t>(v + std::copysign(0.5f, v));
     }
   }
-  
-  
-
-  // 単一チャネルの実データ
-  std::vector<float> data_;
 };
 
  
-
