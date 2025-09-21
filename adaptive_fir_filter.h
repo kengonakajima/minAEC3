@@ -98,8 +98,6 @@ struct AdaptiveFirFilter {
     ::ApplyFilter(render_buffer, size_partitions_, H_, S);
   }
 
-  // Adapts the filter and updates an externally stored impulse response
-  // estimate.
   // Adapts the filter.
   void Adapt(const RenderBuffer& render_buffer, const FftData& G) {
     ::AdaptPartitions(render_buffer, G, size_partitions_, &H_);
