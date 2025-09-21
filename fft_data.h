@@ -10,29 +10,31 @@
 
  
 
-// Struct that holds imaginary data produced from 128 point real-valued FFTs.
+// 128ポイント実数FFTで生成された複素数データを保持する構造体。kFftLengthBy2Plus1は65。128ポイントの末尾63要素は対称なので不要
 struct FftData {
-  // Copies the data in src.
+  std::array<float, kFftLengthBy2Plus1> re; // 実数部分
+  std::array<float, kFftLengthBy2Plus1> im; // 虚数部分
+    
+  // src内のデータをコピーする。
   void Assign(const FftData& src) {
     std::copy(src.re.begin(), src.re.end(), re.begin());
     std::copy(src.im.begin(), src.im.end(), im.begin());
     im[0] = im[kFftLengthBy2] = 0;
   }
 
-  // Clears all the imaginary.
+  // 虚数部をすべてクリアする。
   void Clear() {
     re.fill(0.f);
     im.fill(0.f);
   }
 
-  // Computes the power spectrum of the data.
+  // データのパワースペクトルを計算する。
   void Spectrum(std::span<float> power_spectrum) const {
-    
     std::transform(re.begin(), re.end(), im.begin(), power_spectrum.begin(),
                    [](float a, float b) { return a * a + b * b; });
   }
 
-  // Copy the data from array input.
+  // 配列入力からデータをコピーする。
   void CopyFromPackedArray(const std::array<float, kFftLength>& v) {
     re[0] = v[0];
     re[kFftLengthBy2] = v[1];
@@ -43,7 +45,7 @@ struct FftData {
     }
   }
 
-  // Copies the data into an array.
+  // データを配列へコピーする。
   void CopyToPackedArray(std::array<float, kFftLength>* v) const {
     
     (*v)[0] = re[0];
@@ -53,9 +55,6 @@ struct FftData {
       (*v)[j++] = im[k];
     }
   }
-
-  std::array<float, kFftLengthBy2Plus1> re;
-  std::array<float, kFftLengthBy2Plus1> im;
 };
 
  
