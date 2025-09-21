@@ -1,34 +1,26 @@
-#include <array>
-#include <algorithm>
-#include <functional>
-#include <span>
- 
-
-// Wrapper class that provides 128 point real valued FFT functionality with the
-// FftData type.
+// 128ポイント実数FFTをFftData型と組み合わせて提供するラッパークラス。
 struct Aec3Fft {
+  const OouraFft ooura_fft_; // 実際のFFT演算を担当するOoura FFT実装
+    
   Aec3Fft() : ooura_fft_() {}
 
 
-  // Computes the FFT. Note that both the input and output are modified.
+  // FFTを計算する（入力配列と出力FftDataの両方が更新される）。
   void Fft(std::array<float, kFftLength>* x, FftData* X) const {
-    
-    
     ooura_fft_.Fft(x->data());
     X->CopyFromPackedArray(*x);
   }
-  // Computes the inverse Fft.
+  // 逆FFTを計算する。
   void Ifft(const FftData& X, std::array<float, kFftLength>* x) const {
-    
     X.CopyToPackedArray(x);
     ooura_fft_.InverseFft(x->data());
   }
 
-  // Applies a fixed Hanning window to x, pads kFftLengthBy2 zeros, then FFT。
+  // 固定ハニング窓を適用し、後半にゼロを詰めてからFFTを計算する。
   void ZeroPaddedFft(std::span<const float> x, FftData* X) const {
     std::array<float, kFftLength> fft;
     std::fill(fft.begin(), fft.begin() + kFftLengthBy2, 0.f);
-    // Fixed Hanning window derived from sqrt-Hanning (second half squared).
+    // sqrt-Hanningの後半を二乗した固定ハニング窓を利用。
     for (size_t i = 0; i < kFftLengthBy2; ++i) {
       float w = kSqrtHanning128[kFftLengthBy2 + i];
       w *= w;
@@ -37,14 +29,13 @@ struct Aec3Fft {
     Fft(&fft, X);
   }
 
-  // Concatenates the kFftLengthBy2 values long x and x_old before computing the
-  // Fft. After that, x is copied to x_old.
-  // Padded FFT using fixed sqrt-Hanning window for analysis/synthesis bank。
+  // 過去ブロックx_oldと現在ブロックxを連結し、固定sqrt-Hanning窓でパディングFFTを行う。
+  // 呼び出し側では処理後にxをx_oldへコピーして解析・合成バンクを継続する想定。
   void PaddedFft(std::span<const float> x,
                  std::span<const float> x_old,
                  FftData* X) const {
     std::array<float, kFftLength> fft;
-    // Fixed sqrt-Hanning window
+    // 固定sqrt-Hanning窓を適用
     std::transform(x_old.begin(), x_old.end(), std::begin(kSqrtHanning128),
                    fft.begin(), std::multiplies<float>());
     std::transform(x.begin(), x.end(),
@@ -52,9 +43,6 @@ struct Aec3Fft {
                    fft.begin() + x_old.size(), std::multiplies<float>());
     Fft(&fft, X);
   }
-
-  const OouraFft ooura_fft_;
 };
 
  
-

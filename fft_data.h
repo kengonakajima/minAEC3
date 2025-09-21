@@ -1,5 +1,3 @@
- 
-
 // 128ポイント実数FFTで生成された複素数データを保持する構造体。kFftLengthBy2Plus1は65。128ポイントの末尾63要素は対称なので不要
 struct FftData {
   std::array<float, kFftLengthBy2Plus1> re; // 実数部分
