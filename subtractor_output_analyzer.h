@@ -1,9 +1,9 @@
-// Class for analyzing the properties subtractor output.
+// エコー減算器の出力特性を判定するためのヘルパー。
 struct SubtractorOutputAnalyzer {
-  SubtractorOutputAnalyzer() {}
-  ~SubtractorOutputAnalyzer() = default;
-
-  // Analyses the subtractor output.
+  bool filter_converged_ = false; // 直近期にフィルタが収束したかどうか
+    
+  void HandleEchoPathChange() { filter_converged_ = false; }  
+  // 減算器出力から収束判定を行う。
   void Update(const SubtractorOutput& subtractor_output,
               bool* any_filter_converged) {
     *any_filter_converged = false;
@@ -15,10 +15,5 @@ struct SubtractorOutputAnalyzer {
     *any_filter_converged = filter_converged_;
   }
 
-  // Handle echo path change.
-  void HandleEchoPathChange() { filter_converged_ = false; }
-
-  bool filter_converged_ = false;
 };
-
 

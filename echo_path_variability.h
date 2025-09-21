@@ -1,5 +1,10 @@
+// エコーパスの変化を通知する
 struct EchoPathVariability {
-  enum DelayChange { kNone, kBufferFlush, kNewDetectedDelay };
+  enum DelayChange {
+      kNone,
+      kBufferFlush,
+      kNewDetectedDelay
+  };
 
   explicit EchoPathVariability(DelayChange dc) : delay_change(dc) {}
 

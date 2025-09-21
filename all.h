@@ -1,3 +1,5 @@
+// minAEC3 に必要な全部のヘッダ
+
 #include <cmath>
 #include <cstdint>
 #include <cstdio>

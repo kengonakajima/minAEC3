@@ -1,18 +1,14 @@
-
-// Stores the values being returned from the echo subtractor for a single
-// capture channel.
+// 単一キャプチャチャネルのエコー減算器が返す各種値を保持する。
 struct SubtractorOutput {
-  SubtractorOutput() = default;
-  
 
-  std::array<float, kBlockSize> s;
-  std::array<float, kBlockSize> e;
-  FftData E;
-  std::array<float, kFftLengthBy2Plus1> E2;
-  float e2 = 0.f;
-  float y2 = 0.f;
+  std::array<float, kBlockSize> s; // 線形フィルタが再現したエコー（推定スピーカ信号）
+  std::array<float, kBlockSize> e; // キャプチャ信号と推定エコーとの差分（残差信号）
+  FftData E; // 残差信号eの周波数領域表現
+  std::array<float, kFftLengthBy2Plus1> E2; // 残差信号Eのパワースペクトル
+  float e2 = 0.f; // 残差信号の時間領域パワー（自乗和）
+  float y2 = 0.f; // 入力キャプチャ信号の時間領域パワー（自乗和）
 
-  // Updates the powers of the signals.
+  // 信号のパワー量を更新する。
   void ComputeMetrics(std::span<const float> y) {
     const auto sum_of_squares = [](float a, float b) { return a + b * b; };
     y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
@@ -21,4 +17,3 @@ struct SubtractorOutput {
 };
 
  
-

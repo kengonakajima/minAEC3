@@ -33,8 +33,11 @@ PA_FALLBACK_INCDIR2=/usr/local/include
 PA_FALLBACK_LIBDIR1=/opt/homebrew/opt/portaudio/lib
 PA_FALLBACK_LIBDIR2=/usr/local/lib
 
+# ヘッダをまとめて列挙（追加・削除に追随）
+HEADERS := $(wildcard *.h)
+
 # Echoback: port of echoback.js (local echo loop + AEC3)
-echoback: echoback.cc libportaudio.a
+echoback: echoback.cc libportaudio.a $(HEADERS)
 	$(CXX) -o echoback $(CPPFLAGS) -I$(PORTAUDIO_HOME)/include -I$(PA_FALLBACK_INCDIR1) -I$(PA_FALLBACK_INCDIR2) -I$(PORTAUDIO_HOME) \
 		echoback.cc \
 		-L$(PORTAUDIO_HOME) -L$(PORTAUDIO_HOME)/lib -L$(PA_FALLBACK_LIBDIR1) -L$(PA_FALLBACK_LIBDIR2) \
@@ -42,7 +45,7 @@ echoback: echoback.cc libportaudio.a
 		./libportaudio.a -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreServices 
 
 # Offline comparator (no PortAudio)
-cancel_file: cancel_file.cc
+cancel_file: cancel_file.cc $(HEADERS)
 	$(CXX) -o cancel_file $(CPPFLAGS) cancel_file.cc
 
 .PHONY: clean wasm
