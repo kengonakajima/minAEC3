@@ -1,17 +1,9 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_ADAPTIVE_FIR_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_ADAPTIVE_FIR_FILTER_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <vector>
 #include <algorithm>
 #include <functional>
 #include <span>
-#include "aec3_common.h"
-#include "aec3_fft.h"
-#include "fft_data.h"
-#include "render_buffer.h"
 
  
 // Computes and stores the frequency response of the filter.
@@ -148,7 +140,3 @@ struct AdaptiveFirFilter {
   std::vector<FftData> H_;
   size_t partition_to_constrain_ = 0;
 };
-
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_ADAPTIVE_FIR_FILTER_H_

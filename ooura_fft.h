@@ -1,7 +1,3 @@
-#ifndef MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_H_
-#define MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_H_
-
-
 struct OouraFft {
 
 
@@ -481,6 +477,4 @@ struct OouraFft {
     }
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_H_

@@ -1,15 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_RESIDUAL_ECHO_ESTIMATOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_RESIDUAL_ECHO_ESTIMATOR_H_
-
 #include <array>
 #include <algorithm>
 #include <span>
-#include "aec3_common.h"
-#include "aec_state.h"
-#include "render_buffer.h"
-#include "spectrum_buffer.h"
- 
-
  
 
 struct ResidualEchoEstimator {
@@ -121,4 +112,4 @@ struct ResidualEchoEstimator {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_RESIDUAL_ECHO_ESTIMATOR_H_
+

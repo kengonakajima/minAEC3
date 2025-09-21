@@ -1,17 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <span>
-#include "aec3_common.h"
-#include "block_buffer.h"
-#include "fft_buffer.h"
-#include "fft_data.h"
-#include "spectrum_buffer.h"
- 
-
  
 
 // Provides a buffer of the render data for the echo remover.
@@ -72,6 +61,4 @@ struct RenderBuffer {
   const FftBuffer* const fft_buffer_;
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_

@@ -1,15 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <vector>
-
-#include "aec3_common.h"
-#include "ring_index.h"
- 
-
  
 
 // Struct for bundling a circular buffer of one dimensional vector objects
@@ -44,6 +35,4 @@ struct SpectrumBuffer {
   int read = 0;
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_

@@ -1,14 +1,5 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_BLOCK_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_BUFFER_H_
-
 #include <stddef.h>
-
 #include <vector>
-
-#include "block.h"
-#include "ring_index.h"
- 
-
  
 
 // Struct for bundling a circular buffer of two dimensional vector objects
@@ -39,6 +30,3 @@ struct BlockBuffer {
   int read = 0;
 };
 
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_BLOCK_BUFFER_H_

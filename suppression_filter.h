@@ -1,13 +1,5 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_FILTER_H_
-
 #include <array>
 #include <algorithm>
-
-#include "aec3_common.h"
-#include "aec3_fft.h"
-#include "window_tables.h"
-#include "block.h"
 
 struct SuppressionFilter {
   SuppressionFilter() : fft_() { e_output_old_.fill(0.f); }
@@ -47,4 +39,4 @@ struct SuppressionFilter {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_FILTER_H_
+

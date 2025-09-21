@@ -1,6 +1,3 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_
-
 #include <stddef.h>
 
 inline constexpr int kNumBlocksPerSecond = 250;
@@ -34,4 +31,3 @@ inline size_t GetRenderDelayBufferSize(size_t down_sampling_factor,
          filter_length_blocks + 1;
 }
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_

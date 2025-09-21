@@ -1,21 +1,7 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <numeric>
 #include <algorithm>
- 
-
-#include "aec3_common.h"
-#include "erle_estimator.h"
-#include "subtractor_output_analyzer.h"
-#include "echo_path_variability.h"
-#include "render_buffer.h"
-#include "subtractor_output.h"
- 
-
  
 
 // Echo remover の動作状態を管理。
@@ -111,6 +97,3 @@ struct AecState {
   SubtractorOutputAnalyzer subtractor_output_analyzer_;
 };
 
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_

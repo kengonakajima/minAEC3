@@ -1,12 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_H_
-
 #include <array>
 #include <numeric>
 #include <span>
-#include "aec3_common.h"
-#include "fft_data.h"
-
  
 
 // Stores the values being returned from the echo subtractor for a single
@@ -32,4 +26,3 @@ struct SubtractorOutput {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_H_

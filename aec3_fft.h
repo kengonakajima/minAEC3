@@ -1,16 +1,7 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_AEC3_FFT_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_AEC3_FFT_H_
-
 #include <array>
 #include <algorithm>
 #include <functional>
 #include <span>
-#include "ooura_fft.h"
-#include "aec3_common.h"
-#include "fft_data.h"
-#include "window_tables.h"
- 
-
  
 
 // Wrapper class that provides 128 point real valued FFT functionality with the
@@ -67,4 +58,3 @@ struct Aec3Fft {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_AEC3_FFT_H_

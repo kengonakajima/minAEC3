@@ -1,13 +1,7 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_FFT_DATA_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_FFT_DATA_H_
-
- 
 #include <algorithm>
 #include <array>
 
 #include <span>
-#include "aec3_common.h"
-
  
 
 // 128ポイント実数FFTで生成された複素数データを保持する構造体。kFftLengthBy2Plus1は65。128ポイントの末尾63要素は対称なので不要
@@ -59,4 +53,3 @@ struct FftData {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_FFT_DATA_H_

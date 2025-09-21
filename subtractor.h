@@ -1,22 +1,8 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <vector>
 #include <algorithm>
 #include <span>
- 
-#include "adaptive_fir_filter.h"
-#include "aec3_common.h"
-#include "aec3_fft.h"
-#include "aec_state.h"
-#include "block.h"
-#include "echo_path_variability.h"
-#include "filter_update_gain.h"
-#include "render_buffer.h"
-#include "subtractor_output.h"
  
 
  // FFT 復元から予測誤差を計算するヘルパー。
@@ -113,7 +99,3 @@ struct Subtractor {
   std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response_;
   
 };
-
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_

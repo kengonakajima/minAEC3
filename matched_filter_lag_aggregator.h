@@ -1,13 +1,7 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_
-
 #include <vector>
 #include <array>
 #include <algorithm>
-
 #include <span>
-#include "matched_filter.h"
-
  
 
 // Aggregates lag estimates produced by the MatchedFilter class into a single
@@ -83,4 +77,3 @@ struct MatchedFilterLagAggregator {
 };
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_LAG_AGGREGATOR_H_

@@ -1,15 +1,7 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_H_
-
 #include <algorithm>
 #include <cstddef>
 #include <vector>
-
 #include <span>
-#include "aec3_common.h"
-#include "downsampled_render_buffer.h"
- 
-
  
 
 // Produces recursively updated cross-correlation estimates for several signal
@@ -188,6 +180,3 @@ struct MatchedFilter {
 
 };
 
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_H_

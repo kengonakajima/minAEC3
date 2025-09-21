@@ -1,11 +1,4 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
-
 #include <stddef.h>
-
-#include "block_processor.h"
-#include "audio_buffer.h"
-
 #include <algorithm>
 #include <deque>
 #include <span>
@@ -75,4 +68,3 @@ struct EchoCanceller3 {
 };
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_

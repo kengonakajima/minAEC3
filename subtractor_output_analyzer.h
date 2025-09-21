@@ -1,11 +1,3 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_ANALYZER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_ANALYZER_H_
-
-#include "subtractor_output.h"
-#include "aec3_common.h"
-
- 
-
 // Class for analyzing the properties subtractor output.
 struct SubtractorOutputAnalyzer {
   SubtractorOutputAnalyzer() {}
@@ -29,6 +21,4 @@ struct SubtractorOutputAnalyzer {
   bool filter_converged_ = false;
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_OUTPUT_ANALYZER_H_

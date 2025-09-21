@@ -1,12 +1,8 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_GAIN_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_GAIN_H_
-
 #include <array>
 #include <algorithm>
 #include <cmath>
 #include <span>
-#include "aec3_common.h"
-#include "moving_average.h"
+
 
 struct SuppressionGain {
   SuppressionGain()
@@ -182,5 +178,3 @@ struct SuppressionGain {
 };
 
  
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUPPRESSION_GAIN_H_

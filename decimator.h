@@ -1,6 +1,3 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
-
 #include <span>
 
 // 係数4での単純なダウンサンプル（平均化）。
@@ -20,4 +17,4 @@ inline void DecimateBy4(std::span<const float> in, std::span<float> out) {
   }
 }
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
+

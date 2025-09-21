@@ -1,16 +1,5 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
-
 #include <stddef.h>
-
 #include <algorithm>
-
-#include "block.h"
-#include "echo_remover.h"
-#include "render_delay_buffer.h"
-#include "echo_path_delay_estimator.h"
-#include "echo_path_variability.h"
-
  
 
 // Performs echo cancellation on 64-sample blocks.
@@ -85,6 +74,3 @@ struct BlockProcessor {
   int estimated_delay_blocks_ = -1;
 };
 
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_

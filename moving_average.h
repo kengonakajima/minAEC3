@@ -1,8 +1,4 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_H_
-
 #include <stddef.h>
-
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -46,7 +42,3 @@ struct MovingAverage {
   size_t mem_index_;
 };
 
- 
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_MOVING_AVERAGE_H_

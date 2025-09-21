@@ -1,13 +1,10 @@
-#ifndef MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include "aec3_common.h"
+
 
 // Stores any audio data in a way that allows the audio processing module to
 // operate on it in a controlled manner.
@@ -49,4 +46,3 @@ struct AudioBuffer {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AUDIO_BUFFER_H_

@@ -1,21 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_BUFFER_H_
-
 #include <stddef.h>
-
 #include <vector>
 #include <algorithm>
-
-#include "block_buffer.h"
-#include "fft_buffer.h"
-#include "aec3_fft.h"
-#include "spectrum_buffer.h"
-#include "decimator.h"
-
-#include "block.h"
-#include "downsampled_render_buffer.h"
-#include "render_buffer.h"
-
  
 
 // Buffers incoming render blocks and allows extraction with a specified delay.
@@ -162,6 +147,4 @@ struct RenderDelayBuffer {
   bool RenderUnderrun() { return low_rate_.read == low_rate_.write; }
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_BUFFER_H_

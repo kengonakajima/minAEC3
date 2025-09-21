@@ -1,11 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_ERLE_ESTIMATOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_ERLE_ESTIMATOR_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <algorithm>
-#include "aec3_common.h"
 
  
 
@@ -57,4 +52,4 @@ struct ErleEstimator {
 
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_ERLE_ESTIMATOR_H_
+

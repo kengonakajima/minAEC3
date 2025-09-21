@@ -1,11 +1,5 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_BLOCK_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_H_
-
 #include <array>
-
 #include <span>
-#include "aec3_common.h"
-
  
 
 // Contains 4 milliseconds of mono audio data.
@@ -42,4 +36,4 @@ struct Block {
 };
 
  
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_BLOCK_H_
+

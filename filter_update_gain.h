@@ -1,19 +1,8 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_FILTER_UPDATE_GAIN_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_FILTER_UPDATE_GAIN_H_
-
 #include <stddef.h>
-
 #include <array>
 #include <algorithm>
 #include <span>
-#include "aec3_common.h"
-#include "fft_data.h"
-#include "subtractor_output.h"
-#include "echo_path_variability.h"
 
- 
-
-// full types included above
 
 // 自己回帰型の線形フィルタ更新ゲインを計算する。
 struct FilterUpdateGain {
@@ -94,6 +83,4 @@ struct FilterUpdateGain {
   
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_FILTER_UPDATE_GAIN_H_

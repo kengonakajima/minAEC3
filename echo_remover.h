@@ -1,20 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_
-
 #include <array>
 #include <algorithm>
 #include <span>
-#include "aec3_fft.h"
-#include "subtractor.h"
-#include "suppression_gain.h"
-#include "suppression_filter.h"
-#include "residual_echo_estimator.h"
-#include "aec_state.h"
-#include "block.h"
-#include "render_buffer.h"
-#include "echo_path_variability.h"
- 
-
  
 
 // Removes the echo from the capture signal.
@@ -146,7 +132,3 @@ struct EchoRemover {
   struct LastMetrics { float e2=0.f; float y2=0.f; float erle_avg=0.f; bool linear_usable=false; } last_metrics_;
   
 };
-
- 
-
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_REMOVER_H_

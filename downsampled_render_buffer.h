@@ -1,14 +1,5 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_DOWNSAMPLED_RENDER_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_DOWNSAMPLED_RENDER_BUFFER_H_
-
 #include <stddef.h>
-
 #include <vector>
-#include "ring_index.h"
-
- 
-
- 
 
 // Holds the circular buffer of the downsampled render data.
 struct DownsampledRenderBuffer {
@@ -40,6 +31,5 @@ struct DownsampledRenderBuffer {
   int read = 0;
 };
 
- 
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_DOWNSAMPLED_RENDER_BUFFER_H_
+

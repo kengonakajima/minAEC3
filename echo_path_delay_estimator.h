@@ -1,16 +1,6 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_PATH_DELAY_ESTIMATOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_ECHO_PATH_DELAY_ESTIMATOR_H_
-
 #include <stddef.h>
-
 #include <span>
 #include <array>
-#include "block.h"
-#include "matched_filter.h"
-#include "matched_filter_lag_aggregator.h"
-#include "downsampled_render_buffer.h"
-#include "decimator.h"
-
  
 
 // Estimates the delay of the echo path.
@@ -79,4 +69,4 @@ struct EchoPathDelayEstimator {
 };
  
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_ECHO_PATH_DELAY_ESTIMATOR_H_
+

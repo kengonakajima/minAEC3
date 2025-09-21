@@ -1,9 +1,4 @@
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_WINDOW_TABLES_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_WINDOW_TABLES_H_
-
 #include <array>
-
-#include "aec3_common.h"
 
 // sqrt-Hanning window for 128-point OLA analysis/synthesis.
 inline constexpr std::array<float, kFftLength> kSqrtHanning128 = {
@@ -40,5 +35,5 @@ inline constexpr std::array<float, kFftLength> kSqrtHanning128 = {
     0.19509032201613f, 0.17096188876030f, 0.14673047445536f, 0.12241067519922f,
     0.09801714032956f, 0.07356456359967f, 0.04906767432742f, 0.02454122852291f};
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_WINDOW_TABLES_H_
+
 
