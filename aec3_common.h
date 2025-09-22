@@ -1,4 +1,5 @@
 // AEC3で共通利用する定数群。元のWebRTC実装から必要最小限を抽出。
+#pragma once
 inline constexpr int kNumBlocksPerSecond = 250; // 16 kHz, 64サンプルブロックで1秒あたりのブロック数
 inline constexpr size_t kFftLengthBy2 = 64; // FFTで扱う片側サイズ（周波数ビン数）
 inline constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1; // DC〜Nyquistまでのビン数（実数FFT用）

@@ -34,6 +34,14 @@ static bool read_wav_pcm16(const std::string& path, Wav* out){
   return true;
 }
 
+static void CopyFromPcm16(const int16_t* src, Block* dst) {
+  dst->CopyFromPcm16(src);
+}
+
+static void CopyToPcm16(const Block& src, int16_t* dst) {
+  src.CopyToPcm16(dst);
+}
+
 int main(int argc, char** argv){
   if (argc < 3){ std::fprintf(stderr, "Usage: %s <render.wav> <capture.wav> [--no-linear] [--no-nonlinear]\n", argv[0]); return 1; }
   bool enable_linear = true, enable_nonlinear = true;
@@ -43,14 +51,15 @@ int main(int argc, char** argv){
   if (x.sr!=16000 || y.sr!=16000 || x.ch!=1 || y.ch!=1){ std::fprintf(stderr, "Expected 16k mono wavs\n"); }
   size_t N = std::min(x.samples.size(), y.samples.size()) / kBlockSize;
   EchoCanceller3 aec; aec.SetProcessingModes(enable_linear, enable_nonlinear);
-  AudioBuffer ref, cap;
+  Block render_block;
+  Block capture_block;
   std::vector<int16_t> processed;
   processed.resize(N * kBlockSize);
   for (size_t n=0;n<N;n++){
-    ref.CopyFrom(&x.samples[n*kBlockSize]);
-    cap.CopyFrom(&y.samples[n*kBlockSize]);
-    aec.ProcessBlock(&cap, &ref);
-    cap.CopyTo(&processed[n*kBlockSize]);
+    CopyFromPcm16(&x.samples[n * kBlockSize], &render_block);
+    CopyFromPcm16(&y.samples[n * kBlockSize], &capture_block);
+    aec.ProcessBlock(&capture_block, &render_block);
+    CopyToPcm16(capture_block, &processed[n * kBlockSize]);
     const EchoRemover::LastMetrics& erm = aec.block_processor_.echo_remover_.last_metrics_;
     int dblk = aec.block_processor_.estimated_delay_blocks_;
     float dms = (dblk >= 0) ? (dblk * (1000.0f * static_cast<float>(kBlockSize) / 16000.0f)) : -1.0f; // 64 samples @16kHz = 4ms per block

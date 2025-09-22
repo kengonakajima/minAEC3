@@ -66,7 +66,7 @@ unittestは不要。
 - 16 kHz モノラル固定
 - `tools/echoback` はデバイス SR を 16 kHz に固定し、EchoCanceller3 を直接使用
 
-- AudioBuffer の単一帯域化
+- Block に PCM16 との相互変換機能を追加し、旧 AudioBuffer を廃止
   - 周波数帯分割（Three-band）を廃止し、常に 1 バンド（フルバンド）として処理
   - レサンプラ依存を除去（同一レート前提の単純コピー）
   - `SplitIntoFrequencyBands()`/`MergeFrequencyBands()` は no-op
@@ -79,7 +79,7 @@ unittestは不要。
   - 文字列ユーティリティ: `rtc_base/strings/string_builder.*` を削除
   - RTP/Units API: `api/rtp_*`, `api/units/*` を削除
   - WebAssembly/Node 系: `node_modules/`, `ts/`, `*.wasm*`, 生成 JS などを削除（.gitignore で除外）
-  - 多チャネル補助の削除: `common_audio/channel_buffer.*` を撤去し、AudioBuffer を 1ch専用のシンプル実装に置換
+  - 多チャネル補助の削除: `common_audio/channel_buffer.*` を撤去し、Block ベースの単一チャネル実装へ集約
   - ミキシング/配列変換系ユーティリティ削除: `common_audio/include/audio_util.h` から multi-channel 用テンプレート群を物理削除
   - `alignment_mixer.*` を撤去（モノラルでは未使用）
 
@@ -113,7 +113,6 @@ make wasm
 node echoback.js
 node cancel_file.js counting16kLong.wav playRecCounting16kLong.wav
 ```
-
 
 
 

@@ -122,7 +122,7 @@ FFT を適用して残差信号スペクトル $E_b[k]$ とパワースペクト
 
 $$\tilde{y}_b[m] = \text{IFFT}\left\{\tilde{Y}_b[k]\right\}[m + M]$$
 
-最後に、64 サンプルの有効部分を取り出して `AudioBuffer` へ書き戻す。
+最後に、64 サンプルの有効部分はキャプチャ用 `Block` にそのまま残り、呼び出し元（echoback/cancel_file）が PCM16 へ変換して出力する。
 
 ## 10. モード切替
 

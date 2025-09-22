@@ -17,13 +17,9 @@ struct EchoCanceller3 {
 
   // レンダー信号を取り込みつつキャプチャ信号からエコーを除去する。
   // render が nullptr の場合は、直前にバッファ済みのレンダーブロックのみを利用する。
-  void ProcessBlock(AudioBuffer* capture, const AudioBuffer* render) {
+  void ProcessBlock(Block* capture, const Block* render) {
     if (render) {
-      Block render_block;
-      std::span<const float> buffer_view(render->mono_data_const(), kBlockSize);
-      std::span<float, kBlockSize> render_view = render_block.View();
-      std::copy(buffer_view.begin(), buffer_view.end(), render_view.begin());
-      render_transfer_queue_.push_back(std::move(render_block));
+      render_transfer_queue_.push_back(*render);
       if (render_transfer_queue_.size() > 100) {
         render_transfer_queue_.pop_front();
       }
@@ -35,14 +31,7 @@ struct EchoCanceller3 {
       render_transfer_queue_.pop_front();
     }
 
-    Block capture_block;
-    std::span<const float> cap_view(capture->mono_data_const(), kBlockSize);
-    std::span<float, kBlockSize> cap_dst = capture_block.View();
-    std::copy(cap_view.begin(), cap_view.end(), cap_dst.begin());
-    block_processor_.ProcessCapture(&capture_block);
-    float* out_ptr = capture->mono_data();
-    std::span<float, kBlockSize> processed = capture_block.View();
-    std::copy(processed.begin(), processed.end(), out_ptr);
+    block_processor_.ProcessCapture(capture);
   }
 
   // 線形/非線形の有効・無効を設定（BlockProcessorへ委譲）

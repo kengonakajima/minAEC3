@@ -48,5 +48,4 @@
 #include "residual_echo_estimator.h"
 #include "echo_remover.h"
 #include "block_processor.h"
-#include "audio_buffer.h"
 #include "echo_canceller3.h"
