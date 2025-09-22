@@ -1,5 +1,16 @@
-
+// 残留エコーを抑圧する周波数帯ごとのゲインを計算する。
 struct SuppressionGain {
+  std::array<float, kFftLengthBy2Plus1> last_gain_; // 前回適用したゲイン
+  std::array<float, kFftLengthBy2Plus1> last_nearend_; // 前回の近端スペクトル
+  std::array<float, kFftLengthBy2Plus1> last_echo_; // 前回の残留エコースペクトル
+  
+  MovingAverage nearend_smoother_ {kFftLengthBy2Plus1, 4}; // 近端スペクトルを平滑化する移動平均
+
+    
+  // 固定パラメータ（全インスタンス共通）
+  inline static constexpr float kMaxIncFactor = 2.0f; // ゲインの増加率上限
+  inline static constexpr float kMaxDecFactorLf = 0.25f; // 低域でのゲイン減少率上限
+    
   SuppressionGain()
       : last_nearend_(),
         last_echo_(),
@@ -8,6 +19,7 @@ struct SuppressionGain {
   }
 
 
+  // 近端・エコー・残留エコーのスペクトルからゲインを算出する。
   void GetGain(
       const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
@@ -17,6 +29,7 @@ struct SuppressionGain {
     LowerBandGain(nearend_spectrum, residual_echo_spectrum, low_band_gain);
   }
 
+  // 可聴エコーが残らないようにゲインを制限する。
   void GainToNoAudibleEcho(const std::array<float, kFftLengthBy2Plus1>& nearend,
                            const std::array<float, kFftLengthBy2Plus1>& echo,
                            std::array<float, kFftLengthBy2Plus1>* gain) const {
@@ -33,17 +46,13 @@ struct SuppressionGain {
       if (static_cast<int>(k) <= kLastLfBand) {
         a = 0.f;
       } else if (static_cast<int>(k) < kFirstHfBand) {
-        a = (static_cast<int>(k) - kLastLfBand) /
-            static_cast<float>(kFirstHfBand - kLastLfBand);
+        a = (static_cast<int>(k) - kLastLfBand) / static_cast<float>(kFirstHfBand - kLastLfBand);
       } else {
         a = 1.f;
       }
-      const float enr_transparent =
-          (1 - a) * kLf_enr_transparent + a * kHf_enr_transparent;
-      const float enr_suppress =
-          (1 - a) * kLf_enr_suppress + a * kHf_enr_suppress;
-      const float emr_transparent =
-          (1 - a) * kLf_emr_transparent + a * kHf_emr_transparent;
+      const float enr_transparent = (1 - a) * kLf_enr_transparent + a * kHf_enr_transparent;
+      const float enr_suppress = (1 - a) * kLf_enr_suppress + a * kHf_enr_suppress;
+      const float emr_transparent = (1 - a) * kLf_emr_transparent + a * kHf_emr_transparent;
       const float enr = echo[k] / (nearend[k] + 1.f);
       const float emr = echo[k] / (1.f);
       float g = 1.0f;
@@ -55,6 +64,7 @@ struct SuppressionGain {
     }
   }
 
+  // 低域ゲインを算出し、近端スペクトル・残留エコーを踏まえて制限する。
   void LowerBandGain(
       const std::array<float, kFftLengthBy2Plus1>& suppressor_input,
       const std::array<float, kFftLengthBy2Plus1>& residual_echo,
@@ -127,6 +137,7 @@ struct SuppressionGain {
     }
   }
 
+  // 最低限許容するゲイン値を算出する。
   void GetMinGain(std::span<const float> weighted_residual_echo,
                   std::span<const float> last_nearend,
                   std::span<const float> last_echo,
@@ -158,16 +169,6 @@ struct SuppressionGain {
     }
   }
 
-  
-  
-  std::array<float, kFftLengthBy2Plus1> last_gain_;
-  std::array<float, kFftLengthBy2Plus1> last_nearend_;
-  std::array<float, kFftLengthBy2Plus1> last_echo_;
-  
-  MovingAverage nearend_smoother_ {kFftLengthBy2Plus1, 4};
-  // 固定パラメータ（全インスタンス共通）
-  inline static constexpr float kMaxIncFactor = 2.0f;
-  inline static constexpr float kMaxDecFactorLf = 0.25f;
 
 };
 

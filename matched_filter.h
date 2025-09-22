@@ -1,33 +1,32 @@
 
  
 
-// Produces recursively updated cross-correlation estimates for several signal
-// shifts where the intra-shift spacing is uniform.
+// 複数の信号シフトに対する相互相関を逐次更新し、遅延候補を推定する。
 struct MatchedFilter {
-  static inline constexpr float kSmoothing = 0.7f; // TODO
-  static inline constexpr float kMatchingFilterThreshold = 0.2f; // TODO
-  static inline constexpr float kExcitationLimit = 150.f; // TODO
-  // Stores properties for the lag estimate corresponding to a particular signal shift.
+  static inline constexpr float kSmoothing = 0.7f; // フィルタ更新時の平滑係数
+  static inline constexpr float kMatchingFilterThreshold = 0.2f; // 適合度判断の閾値
+  static inline constexpr float kExcitationLimit = 150.f; // 励起不足を防ぐ入力パワーの下限
+  // 個々の信号シフトに対応する遅延推定値を保持する構造体。
   struct LagEstimate {
     LagEstimate() = default;
     LagEstimate(size_t lag) : lag(lag) {}
     size_t lag = 0;
   };
   
-  static constexpr size_t kNumFilters = 5; // TODO
-  static constexpr size_t kSubBlockSize = kBlockSize / 4; // TODO
-  static constexpr size_t kFilterLength = kMatchedFilterWindowSizeSubBlocks * kSubBlockSize; // TODO
-  static constexpr size_t kFilterIntraLagShift = kMatchedFilterAlignmentShiftSizeSubBlocks * kSubBlockSize; // TODO
-  static constexpr size_t kMaxFilterLag = kNumFilters * kFilterIntraLagShift + kFilterLength; // TODO
+  static constexpr size_t kNumFilters = 5; // 追跡する遅延候補数
+  static constexpr size_t kSubBlockSize = kBlockSize / 4; // ダウンサンプル後サブブロック長
+  static constexpr size_t kFilterLength = kMatchedFilterWindowSizeSubBlocks * kSubBlockSize; // 各フィルタ長
+  static constexpr size_t kFilterIntraLagShift = kMatchedFilterAlignmentShiftSizeSubBlocks * kSubBlockSize; // フィルタ間の遅延シフト量
+  static constexpr size_t kMaxFilterLag = kNumFilters * kFilterIntraLagShift + kFilterLength; // 推定する最大遅延
 
-  std::vector<std::vector<float>> filters_; // TODO
-  int reported_lag_ = -1; // TODO
-  int winner_lag_ = -1; // TODO
+  std::vector<std::vector<float>> filters_; // 遅延候補ごとの適応フィルタ係数
+  int reported_lag_ = -1; // 現在報告している遅延
+  int winner_lag_ = -1; // 直近日に最も信頼できた遅延
     
   MatchedFilter() : filters_( /*num_filters=*/kNumFilters, std::vector<float>(kFilterLength, 0.f)) {}
   
 
-  // Updates the correlation with the values in the capture buffer.
+  // キャプチャバッファを使って相互相関を更新する。
   void Update(const DownsampledRenderBuffer& render_buffer,
               std::span<const float> capture) {
 
@@ -150,7 +149,7 @@ struct MatchedFilter {
     }
   }
 
-  // Resets the matched filter.
+  // マッチドフィルタの状態をリセットする。
   void Reset() {
     for (auto& f : filters_) {
       std::fill(f.begin(), f.end(), 0.f);
@@ -159,10 +158,9 @@ struct MatchedFilter {
     reported_lag_ = -1;
   }
 
-  // Returns the current lag estimates.
+  // 現在の遅延推定値を返す。
   int GetBestLagEstimate() const { return reported_lag_; }
 
 
 
 };
-

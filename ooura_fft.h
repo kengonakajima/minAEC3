@@ -1,7 +1,8 @@
+// Ooura FFTのC実装をラップし、128ポイント実数FFTに必要なテーブルと内蔵ルーチンを提供する。
 struct OouraFft {
 
 
-    // Precomputed tables previously in ooura_fft_tables_common.h.
+    // 事前計算済みの係数テーブル（元の ooura_fft_tables_common.h から抽出）。
     const float rdft_w[64] = {
         1.0000000000f, 0.0000000000f, 0.7071067691f, 0.7071067691f, 0.9238795638f,
         0.3826834559f, 0.3826834559f, 0.9238795638f, 0.9807852507f, 0.1950903237f,
@@ -476,5 +477,4 @@ struct OouraFft {
         }
     }
 };
-
 

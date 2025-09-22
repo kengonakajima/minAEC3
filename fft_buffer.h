@@ -1,10 +1,9 @@
-// Struct for bundling a circular buffer of FftData objects together with the
-// read and write indices.
+// FftData のリングバッファと読み書きインデックスをまとめた構造体。
 struct FftBuffer {
-  const int size; // TODO
-  std::vector<FftData> buffer; // TODO
-  int write = 0; // TODO
-  int read = 0; // TODO
+  const int size; // バッファ長（保持するFftDataの数）
+  std::vector<FftData> buffer; // FftDataのリングバッファ
+  int write = 0; // 次に書き込む位置
+  int read = 0; // 次に読み出す位置
     
   FftBuffer(size_t size) : size(static_cast<int>(size)), buffer(size) {
     for (auto& fft_data : buffer) fft_data.Clear();
@@ -22,4 +21,3 @@ struct FftBuffer {
 };
 
  
-
