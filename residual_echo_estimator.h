@@ -1,15 +1,21 @@
 
 struct ResidualEchoEstimator {
-  // Class-wide constants
-  inline static constexpr size_t kNoiseFloorHold = 50;
-  inline static constexpr float kMinNoiseFloorPower = 1638400.f;
-  inline static constexpr float kStationaryGateSlope = 10.f;
-  inline static constexpr float kNoiseGatePower = 27509.42f;
-  inline static constexpr float kNoiseGateSlope = 0.3f;
-  inline static constexpr size_t kRenderPreWindowSize = 1;
-  inline static constexpr size_t kRenderPostWindowSize = 1;
+  inline static constexpr size_t kNoiseFloorHold = 50; // ノイズフロア更新を遅らせる保持フレーム数
+  inline static constexpr float kMinNoiseFloorPower = 1638400.f; // ノイズフロアの下限
+  inline static constexpr float kStationaryGateSlope = 10.f; // 定常ノイズ除去の傾き係数
+  inline static constexpr float kNoiseGatePower = 27509.42f; // ノイズゲートを掛け始めるしきい値
+  inline static constexpr float kNoiseGateSlope = 0.3f; // ノイズゲート適用の傾き
+  inline static constexpr size_t kRenderPreWindowSize = 1; // 遅延推定前側で参照するスペクトル数
+  inline static constexpr size_t kRenderPostWindowSize = 1; // 遅延推定後側で参照するスペクトル数
+
+
+  std::array<float, kFftLengthBy2Plus1> X2_noise_floor_; // レンダー信号のノイズフロア推定
+  std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_; // ノイズフロア保持カウンタ
+
+    
   ResidualEchoEstimator() { Reset(); }
 
+  // 残留エコーのパワースペクトルR2を推定する。
   void Estimate(const AecState& aec_state,
                 const RenderBuffer& render_buffer,
                 const std::array<float, kFftLengthBy2Plus1>& S2_linear,
@@ -52,7 +58,7 @@ struct ResidualEchoEstimator {
       }
     };
 
-    // Estimate the power of the stationary noise in the render signal.
+    // レンダー信号の定常ノイズパワーを推定。
     UpdateRenderNoisePower(render_buffer);
 
     if (aec_state.UsableLinearEstimate()) {
@@ -62,7 +68,7 @@ struct ResidualEchoEstimator {
         (*R2)[k] = S2_linear[k] / erle[k];
       }
     } else {
-      // Nonlinear mode: use echo generating power with gating and noise floor subtraction
+      // 非線形モード: エコー生成パワーとノイズゲートを組み合わせて推定
       const float echo_path_gain = 1.0f;  // simplified
       std::array<float, kFftLengthBy2Plus1> X2;
       EchoGeneratingPower(render_buffer.GetSpectrumBuffer(),
@@ -76,14 +82,13 @@ struct ResidualEchoEstimator {
     }
   }
 
-  // Resets the state.
+  // 内部状態をリセットする。
   void Reset() {
     X2_noise_floor_counter_.fill(static_cast<int>(kNoiseFloorHold));
     X2_noise_floor_.fill(kMinNoiseFloorPower);
   }
 
-  // Updates estimate for the power of the stationary noise component in the
-  // render signal.
+  // レンダー信号に含まれる定常ノイズ成分のパワーを更新する。
   void UpdateRenderNoisePower(const RenderBuffer& render_buffer) {
     const auto& render_power = render_buffer.Spectrum(0);
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
@@ -101,11 +106,7 @@ struct ResidualEchoEstimator {
     }
   }
 
-  std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
-  std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
-
 };
 
  
-
 

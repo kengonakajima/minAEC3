@@ -4,24 +4,27 @@
 // Produces recursively updated cross-correlation estimates for several signal
 // shifts where the intra-shift spacing is uniform.
 struct MatchedFilter {
-  // Parameters
-  static inline constexpr float kSmoothing = 0.7f;
-  static inline constexpr float kMatchingFilterThreshold = 0.2f;
-  static inline constexpr float kExcitationLimit = 150.f;
-  // Stores properties for the lag estimate corresponding to a particular signal
-  // shift.
+  static inline constexpr float kSmoothing = 0.7f; // TODO
+  static inline constexpr float kMatchingFilterThreshold = 0.2f; // TODO
+  static inline constexpr float kExcitationLimit = 150.f; // TODO
+  // Stores properties for the lag estimate corresponding to a particular signal shift.
   struct LagEstimate {
     LagEstimate() = default;
     LagEstimate(size_t lag) : lag(lag) {}
     size_t lag = 0;
   };
+  
+  static constexpr size_t kNumFilters = 5; // TODO
+  static constexpr size_t kSubBlockSize = kBlockSize / 4; // TODO
+  static constexpr size_t kFilterLength = kMatchedFilterWindowSizeSubBlocks * kSubBlockSize; // TODO
+  static constexpr size_t kFilterIntraLagShift = kMatchedFilterAlignmentShiftSizeSubBlocks * kSubBlockSize; // TODO
+  static constexpr size_t kMaxFilterLag = kNumFilters * kFilterIntraLagShift + kFilterLength; // TODO
 
-  MatchedFilter()
-      : filters_(
-            /*num_filters=*/kNumFilters,
-            std::vector<float>(kFilterLength, 0.f)) {}
-
-
+  std::vector<std::vector<float>> filters_; // TODO
+  int reported_lag_ = -1; // TODO
+  int winner_lag_ = -1; // TODO
+    
+  MatchedFilter() : filters_( /*num_filters=*/kNumFilters, std::vector<float>(kFilterLength, 0.f)) {}
   
 
   // Updates the correlation with the values in the capture buffer.
@@ -159,21 +162,7 @@ struct MatchedFilter {
   // Returns the current lag estimates.
   int GetBestLagEstimate() const { return reported_lag_; }
 
-  // 固定パラメータ（インスタンス間で不変）。
-  static constexpr size_t kNumFilters = 5;
-  static constexpr size_t kSubBlockSize = kBlockSize / 4;
-  static constexpr size_t kFilterLength =
-      kMatchedFilterWindowSizeSubBlocks * kSubBlockSize;
-  static constexpr size_t kFilterIntraLagShift =
-      kMatchedFilterAlignmentShiftSizeSubBlocks * kSubBlockSize;
-  static constexpr size_t kMaxFilterLag =
-      kNumFilters * kFilterIntraLagShift + kFilterLength;
 
-  
-
-  std::vector<std::vector<float>> filters_;
-  int reported_lag_ = -1;
-  int winner_lag_ = -1;
 
 };
 

@@ -1,13 +1,23 @@
- 
-
-// Buffers incoming render blocks and allows extraction with a specified delay.
+// レンダーブロックを遅延付きで保持し、指定遅延で取り出せるようにする。
 struct RenderDelayBuffer {
   enum BufferingEvent {
-    kNone,
-    kRenderUnderrun,
-    kRenderOverrun
+      kNone, // イベントなし
+      kRenderUnderrun, // レンダー不足（読み出し側が先行）
+      kRenderOverrun // レンダー過多（書き込み側が先行）
   };
 
+  inline static constexpr size_t kDownSamplingFactor = 4; // 遅延推定で用いるダウンサンプリング倍率
+  const int sub_block_size_; // ダウンサンプル後のサブブロック長
+  BlockBuffer blocks_; // レンダーブロックのリングバッファ
+  SpectrumBuffer spectra_; // レンダースペクトルのリングバッファ
+  FftBuffer ffts_; // FFT済みレンダーデータのリングバッファ
+  int delay_; // 現在適用中の遅延（ブロック単位）
+  RenderBuffer echo_remover_buffer_; // EchoRemoverへ渡すバッファビュー
+  DownsampledRenderBuffer low_rate_; // ダウンサンプリング済みレンダーデータ
+  const Aec3Fft fft_; // FFT処理ヘルパー
+  std::vector<float> render_ds_; // ダウンサンプル用ワーク領域
+  const int buffer_headroom_; // バッファの安全余裕ブロック数
+    
   RenderDelayBuffer()
       : sub_block_size_(static_cast<int>(kBlockSize / kDownSamplingFactor)),
         blocks_(GetRenderDelayBufferSize(kDownSamplingFactor,
@@ -26,14 +36,14 @@ struct RenderDelayBuffer {
   }
   
 
-  // Resets the buffer alignment.
+  // バッファの整列状態をリセットする。
   void Reset() {
     low_rate_.read = low_rate_.OffsetIndex(low_rate_.write, sub_block_size_);
     ApplyTotalDelay(/*default_delay_blocks=*/10);
     delay_ = -1;
   }
 
-  // Inserts a block into the buffer.
+  // レンダーブロックをバッファへ挿入する。
   BufferingEvent Insert(const Block& block) {
     const int previous_write = blocks_.write;
     IncrementWriteIndices();
@@ -45,8 +55,7 @@ struct RenderDelayBuffer {
     return event;
   }
 
-  // Updates the buffers one step based on the specified buffer delay. Returns
-  // an enum indicating whether there was a special event that occurred.
+  // バッファを1ステップ進め、特殊イベントの有無を返す。
   BufferingEvent PrepareCaptureProcessing() {
     BufferingEvent event = kNone;
     if (RenderUnderrun()) {
@@ -61,8 +70,7 @@ struct RenderDelayBuffer {
   }
 
 
-  // Sets the buffer delay and returns a bool indicating whether the delay
-  // changed.
+  // 遅延量を設定し、変更があったかどうかを返す。
   bool AlignFromDelay(size_t delay) {
     if (delay_ == static_cast<int>(delay)) {
       return false;
@@ -75,13 +83,13 @@ struct RenderDelayBuffer {
   }
 
 
-  // Gets the buffer max delay.
+  // 適用可能な最大遅延を返す。
   size_t MaxDelay() const { return blocks_.buffer.size() - 1 - buffer_headroom_; }
 
-  // Returns the render buffer for the echo remover.
+  // EchoRemover用レンダーバッファを取得する。
   RenderBuffer* GetRenderBuffer() { return &echo_remover_buffer_; }
 
-  // Returns the downsampled render buffer.
+  // ダウンサンプリング済みレンダーバッファを取得する。
   const DownsampledRenderBuffer& GetDownsampledRenderBuffer() const { return low_rate_; }
 
   int BufferLatency() const {
@@ -90,18 +98,6 @@ struct RenderDelayBuffer {
     int latency_blocks = latency_samples / sub_block_size_;
     return latency_blocks;
   }
-
-  inline static constexpr size_t kDownSamplingFactor = 4;
-  const int sub_block_size_;
-  BlockBuffer blocks_;
-  SpectrumBuffer spectra_;
-  FftBuffer ffts_;
-  int delay_;
-  RenderBuffer echo_remover_buffer_;
-  DownsampledRenderBuffer low_rate_;
-  const Aec3Fft fft_;
-  std::vector<float> render_ds_;
-  const int buffer_headroom_;
 
   int MapDelayToTotalDelay(int external_delay_blocks) const {
     const int latency_blocks = BufferLatency();
@@ -112,6 +108,8 @@ struct RenderDelayBuffer {
     spectra_.read = spectra_.OffsetIndex(spectra_.write, delay);
     ffts_.read = ffts_.OffsetIndex(ffts_.write, delay);
   }
+  // ブロックを挿入して各種バッファを更新する。
+  // block: 追加するレンダーブロック, previous_write: 更新前のwrite位置
   void InsertBlock(const Block& block, int previous_write) {
     auto& b = blocks_;
     auto& lr = low_rate_;
@@ -143,5 +141,3 @@ struct RenderDelayBuffer {
   bool RenderOverrun() { return low_rate_.read == low_rate_.write || blocks_.read == blocks_.write; }
   bool RenderUnderrun() { return low_rate_.read == low_rate_.write; }
 };
-
-

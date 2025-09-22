@@ -7,18 +7,17 @@ struct AecState {
         subtractor_output_analyzer_() {}
   
 
-  // Returns whether the echo subtractor can be used to determine the residual
-  // echo.
+  // エコー減算器の線形推定が残留エコー推定に利用できるかを返す。
   bool UsableLinearEstimate() const { return filter_quality_state_.LinearFilterUsable(); }
 
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
     return erle_estimator_.Erle();
   }
 
-  // Returns the delay estimate based on the linear filter.
+  // 線形フィルタに基づく遅延推定値を返す（簡略化により常に0）。
   int MinDirectPathFilterDelay() const { return 0; }
 
-  // Takes appropriate action at an echo path change.
+  // エコーパス変化時に必要なリセット処理を行う。
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability) {
     const auto full_reset = [&]() {
       erle_estimator_.Reset(true);
@@ -30,7 +29,7 @@ struct AecState {
     subtractor_output_analyzer_.HandleEchoPathChange();
   }
 
-  // Updates the aec state.
+  // 最新の信号情報でAEC状態を更新する。
   void Update(const RenderBuffer& render_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
@@ -46,24 +45,20 @@ struct AecState {
     filter_quality_state_.Update(active_render, any_filter_converged);
   }
 
-  // Class for analyzing how well the linear filter is, and can be expected to,
-  // perform on the current signals. The purpose of this is for using to
-  // select the echo suppression functionality as well as the input to the echo
-  // suppressor.
+  // 線形フィルタの適用可否を評価し、エコー抑圧処理の制御に用いる補助クラス。
   struct FilteringQualityAnalyzer {
     FilteringQualityAnalyzer() {}
 
-    // Returns whether the linear filter can be used for the echo
-    // canceller output.
+    // 線形フィルタをエコーキャンセラ出力に利用できると判断したかを返す。
     bool LinearFilterUsable() const { return overall_usable_linear_estimates_; }
 
-    // Resets the state of the analyzer.
+    // 評価状態をリセットする。
     void Reset() {
       overall_usable_linear_estimates_ = false;
       filter_update_blocks_since_reset_ = 0;
     }
 
-    // Updates the analysis based on new data.
+    // 新しいデータに基づいて評価結果を更新する。
     void Update(bool active_render, bool any_filter_converged) {
       const bool filter_update = active_render;
       filter_update_blocks_since_reset_ += filter_update ? 1 : 0;
@@ -91,4 +86,3 @@ struct AecState {
   ErleEstimator erle_estimator_;
   SubtractorOutputAnalyzer subtractor_output_analyzer_;
 };
-

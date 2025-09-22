@@ -1,6 +1,23 @@
-
-// Removes the echo from the capture signal.
+// キャプチャ信号からエコー成分を除去する。
 struct EchoRemover {
+  const Aec3Fft fft_; // FFT処理を担うヘルパー
+  Subtractor subtractor_; // 線形エコー推定・適応フィルタ
+  SuppressionGain suppression_gain_; // 抑圧ゲイン計算器
+  SuppressionFilter suppression_filter_; // 抑圧ゲイン適用フィルタ
+  ResidualEchoEstimator residual_echo_estimator_; // 残留エコー推定器
+  AecState aec_state_; // AEC全体の状態管理
+  std::array<float, kFftLengthBy2> e_old_{}; // 残差信号の前ブロックを保持
+  std::array<float, kFftLengthBy2> y_old_{}; // 入力信号の前ブロックを保持
+  bool enable_linear_filter_ = true; // 線形減算を有効にするか
+  bool enable_nonlinear_suppressor_ = true; // 非線形抑圧を有効にするか
+  struct LastMetrics {
+      float e2=0.f;
+      float y2=0.f;
+      float erle_avg=0.f;
+      bool linear_usable=false;
+  } last_metrics_;
+
+    
   EchoRemover()
       : fft_(),
         subtractor_(),
@@ -17,22 +34,21 @@ struct EchoRemover {
   }
   
 
-  // Removes the echo from a block of samples from the capture signal. The
-  // supplied render signal is assumed to be pre-aligned with the capture
-  // signal.
+  // キャプチャ信号1ブロックからエコー成分を除去する。
+  // echo_path_variability: 遅延変化情報, render_buffer: レンダーバッファ, capture: キャプチャブロック
   void ProcessCapture(
       EchoPathVariability echo_path_variability,
       RenderBuffer* render_buffer,
       Block* capture) {
     Block* y = capture;
-    std::array<float, kFftLengthBy2> e;
-    std::array<float, kFftLengthBy2Plus1> Y2;
-    std::array<float, kFftLengthBy2Plus1> E2;
-    std::array<float, kFftLengthBy2Plus1> R2;
-    std::array<float, kFftLengthBy2Plus1> S2_linear;
-    FftData Y;
-    FftData E;
-    SubtractorOutput subtractor_output;
+    std::array<float, kFftLengthBy2> e; // 残差信号
+    std::array<float, kFftLengthBy2Plus1> Y2; // 入力信号のパワースペクトル
+    std::array<float, kFftLengthBy2Plus1> E2; // 残差信号のパワースペクトル
+    std::array<float, kFftLengthBy2Plus1> R2; // 残留エコー推定（パワースペクトル）
+    std::array<float, kFftLengthBy2Plus1> S2_linear; // 線形推定エコーのパワースペクトル
+    FftData Y; // 入力信号のFFT
+    FftData E; // 残差信号のFFT
+    SubtractorOutput subtractor_output; // 減算器の処理結果
 
     auto LinearEchoPower = [](const FftData& E,
                               const FftData& Y,
@@ -114,17 +130,5 @@ struct EchoRemover {
     last_metrics_.erle_avg = erle_avg;
     last_metrics_.linear_usable = aec_state_.UsableLinearEstimate();
   }
-
-  const Aec3Fft fft_;
-  Subtractor subtractor_;
-  SuppressionGain suppression_gain_;
-  SuppressionFilter suppression_filter_;
-  ResidualEchoEstimator residual_echo_estimator_;
-  AecState aec_state_;
-  std::array<float, kFftLengthBy2> e_old_{};
-  std::array<float, kFftLengthBy2> y_old_{};
-  bool enable_linear_filter_ = true;
-  bool enable_nonlinear_suppressor_ = true;
-  struct LastMetrics { float e2=0.f; float y2=0.f; float erle_avg=0.f; bool linear_usable=false; } last_metrics_;
   
 };
