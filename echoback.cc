@@ -1,5 +1,5 @@
 // Echoback (C++): 最小構成のローカル・エコーバック + AEC3
-// Usage:
+// 使い方:
 //   ./echoback [--passthrough] [--no-linear] [--no-nonlinear] [latency_ms=200]
 //   体感用のモード:
 //     --passthrough     : AEC無効（素通し）
@@ -21,18 +21,18 @@ struct State {
   int dev_sr = 16000;              // 16k固定
   int block_size = 64;             // ブロック長（PortAudio framesPerBuffer と一致）
   // 1ch 固定（PortAudioデバイス設定も1ch）
-  int latency_ms = 200;             // jitter buffer target (ms) for local echo
-  size_t latency_samples = 48000/5; // will be set from dev_sr*latency_ms/1000
+  int latency_ms = 200;             // ローカルエコー用ジッタバッファの目標遅延（ms）
+  size_t latency_samples = 48000/5; // dev_sr*latency_ms/1000 で再計算される予定値
 
-  // FIFOs in device domain (dev_sr)
-  std::deque<int16_t> rec_dev;     // mic captured samples
-  std::deque<int16_t> out_dev;     // to speaker
+  // デバイスサンプリング周波数 (dev_sr) で動作するFIFO群
+  std::deque<int16_t> rec_dev;     // マイクから収音したサンプル
+  std::deque<int16_t> out_dev;     // スピーカーへ送るサンプル
 
-  // AEC3 domain = device domain (same sr). 64-sample blocks
-  std::deque<int16_t> ref_fifo;    // previously processed block (local echo reference)
+  // AEC3 ドメイン = デバイスドメイン（同一サンプリング）。64 サンプル単位で処理
+  std::deque<int16_t> ref_fifo;    // 直前に処理したブロック（ローカルエコー参照）
 
-  // Jitter buffer (device domain). Local echo path accumulator, mixes into speaker
-  std::deque<int16_t> jitter;      // accumulate processed to emulate loopback latency
+  // ジッタバッファ（デバイスドメイン）。ローカルエコーパスを蓄積しスピーカーへ混ぜる
+  std::deque<int16_t> jitter;      // ループバック遅延を模擬するため処理済み音を蓄積
   bool need_jitter = true;
 
   // MatchedFilter による推定遅延の前回ログ値（ブロック数）。
@@ -69,12 +69,12 @@ static void push_block(std::deque<int16_t>& q, const int16_t* src, size_t n){
 }
 
 static void process_available_blocks(State& s){
-  // Run as many 64-sample blocks as possible
+  // 可能なかぎり多くの 64 サンプルブロックを処理する
   while (s.rec_dev.size() >= (size_t)s.block_size) {
     std::vector<int16_t> rec(s.block_size), ref(s.block_size), out(s.block_size);
-    // pop rec block
+    // 入力（rec）ブロックを取り出す
     pop_samples(s.rec_dev, rec.data(), s.block_size);
-    // pop ref block (or zeros if not enough)
+    // 参照（ref）ブロックを取り出す（不足時はゼロ埋め）
     if (s.ref_fifo.size() >= (size_t)s.block_size) {
       pop_samples(s.ref_fifo, ref.data(), s.block_size);
     } else {
@@ -123,7 +123,7 @@ static void process_available_blocks(State& s){
       }
     }
 
-    // Like echoback.js: 次フレーム以降のrefとして保存（processedを再利用）
+    // echoback.js と同様に、次フレーム以降の参照として保存（処理後データを再利用）
     push_block(s.ref_fifo, out.data(), s.block_size);
 
     // ネットワークの代わりにローカル蓄積へ積む（エコーバック）
@@ -152,16 +152,16 @@ static int pa_callback(const void* inputBuffer,
   State* st = reinterpret_cast<State*>(userData);
   const int16_t* in = reinterpret_cast<const int16_t*>(inputBuffer);
   int16_t* out = reinterpret_cast<int16_t*>(outputBuffer);
-  const unsigned long n = blockSize; // mono (framesPerBuffer)
+  const unsigned long n = blockSize; // モノラルのフレーム数（framesPerBuffer）
   // Single-threaded実行のため終了フラグは不要
 
-  // 1) enqueue capture
+  // 1) キャプチャデータをキューへ格納
   if (in) { for (unsigned long i=0;i<n;i++) st->rec_dev.push_back(in[i]); }
 
-  // 2) run AEC3 on as many blocks as ready
+  // 2) 準備が整っている分だけ AEC3 を実行
   process_available_blocks(*st);
 
-  // 3) emit output
+  // 3) 出力を生成
   for (unsigned long i=0;i<n;i++){
     if (!st->out_dev.empty()){ out[i]=st->out_dev.front(); st->out_dev.pop_front(); }
     else { out[i]=0; }
