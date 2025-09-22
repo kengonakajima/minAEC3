@@ -52,7 +52,7 @@ int main(int argc, char** argv){
     cap.CopyFrom(&y.samples[n*kBlockSize]);
     aec.ProcessCapture(&cap);
     cap.CopyTo(&processed[n*kBlockSize]);
-    const auto& erm = aec.block_processor_.echo_remover_.last_metrics_;
+    const EchoRemover::LastMetrics& erm = aec.block_processor_.echo_remover_.last_metrics_;
     int dblk = aec.block_processor_.estimated_delay_blocks_;
     float dms = (dblk >= 0) ? (dblk * (1000.0f * static_cast<float>(kBlockSize) / 16000.0f)) : -1.0f; // 64 samples @16kHz = 4ms per block
     float ratio = (erm.y2 > 0.f) ? (erm.e2 / erm.y2) : 0.f;

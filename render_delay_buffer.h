@@ -111,11 +111,11 @@ struct RenderDelayBuffer {
   // ブロックを挿入して各種バッファを更新する。
   // block: 追加するレンダーブロック, previous_write: 更新前のwrite位置
   void InsertBlock(const Block& block, int previous_write) {
-    auto& b = blocks_;
-    auto& lr = low_rate_;
-    auto& ds = render_ds_;
-    auto& f = ffts_;
-    auto& s = spectra_;
+    BlockBuffer& b = blocks_;
+    DownsampledRenderBuffer& lr = low_rate_;
+    std::vector<float>& ds = render_ds_;
+    FftBuffer& f = ffts_;
+    SpectrumBuffer& s = spectra_;
     std::copy(block.begin(), block.end(), b.buffer[b.write].begin());
     DecimateBy4(b.buffer[b.write].View(), ds);
     std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);

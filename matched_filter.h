@@ -25,76 +25,76 @@ struct MatchedFilter {
     
   MatchedFilter() : filters_( /*num_filters=*/kNumFilters, std::vector<float>(kFilterLength, 0.f)) {}
   
+  static size_t MaxSquarePeakIndex(std::span<const float> coefficients) {
+    if (coefficients.size() < 2) {
+      return 0;
+    }
+    float max_element1 = coefficients[0] * coefficients[0];
+    float max_element2 = coefficients[1] * coefficients[1];
+    size_t lag_estimate1 = 0;
+    size_t lag_estimate2 = 1;
+    const size_t last_index = coefficients.size() - 1;
+    for (size_t index = 2; index < last_index; index += 2) {
+      const float element1 = coefficients[index] * coefficients[index];
+      const float element2 = coefficients[index + 1] * coefficients[index + 1];
+      if (element1 > max_element1) {
+        max_element1 = element1;
+        lag_estimate1 = index;
+      }
+      if (element2 > max_element2) {
+        max_element2 = element2;
+        lag_estimate2 = index + 1;
+      }
+    }
+    if (max_element2 > max_element1) {
+      max_element1 = max_element2;
+      lag_estimate1 = lag_estimate2;
+    }
+    const float last_element = coefficients[last_index] * coefficients[last_index];
+    if (last_element > max_element1) {
+      return last_index;
+    }
+    return lag_estimate1;
+  }
+
+  void MatchedFilterCore(size_t x_start_index,
+                         float x2_sum_threshold,
+                         std::span<const float> x,
+                         std::span<const float> y,
+                         std::span<float> h,
+                         bool* filters_updated,
+                         float* error_sum) const {
+    for (size_t i = 0; i < y.size(); ++i) {
+      float x2_sum = 0.f;
+      float s = 0.f;
+      size_t x_index = x_start_index;
+      for (size_t k = 0; k < h.size(); ++k) {
+        x2_sum += x[x_index] * x[x_index];
+        s += h[k] * x[x_index];
+        x_index = x_index < (x.size() - 1) ? x_index + 1 : 0;
+      }
+
+      const float e = y[i] - s;
+      (*error_sum) += e * e;
+
+      if (x2_sum > x2_sum_threshold) {
+        const float alpha = kSmoothing * e / x2_sum;
+        size_t adapt_index = x_start_index;
+        for (size_t k = 0; k < h.size(); ++k) {
+          h[k] += alpha * x[adapt_index];
+          adapt_index = adapt_index < (x.size() - 1) ? adapt_index + 1 : 0;
+        }
+        *filters_updated = true;
+      }
+
+      x_start_index = x_start_index > 0 ? x_start_index - 1 : x.size() - 1;
+    }
+  }
+
 
   // キャプチャバッファを使って相互相関を更新する。
   void Update(const DownsampledRenderBuffer& render_buffer,
               std::span<const float> capture) {
-
-    auto MaxSquarePeakIndex = [](std::span<const float> h) -> size_t {
-      if (h.size() < 2) {
-        return 0;
-      }
-      float max_element1 = h[0] * h[0];
-      float max_element2 = h[1] * h[1];
-      size_t lag_estimate1 = 0;
-      size_t lag_estimate2 = 1;
-      const size_t last_index = h.size() - 1;
-      for (size_t k = 2; k < last_index; k += 2) {
-        float element1 = h[k] * h[k];
-        float element2 = h[k + 1] * h[k + 1];
-        if (element1 > max_element1) {
-          max_element1 = element1;
-          lag_estimate1 = k;
-        }
-        if (element2 > max_element2) {
-          max_element2 = element2;
-          lag_estimate2 = k + 1;
-        }
-      }
-      if (max_element2 > max_element1) {
-        max_element1 = max_element2;
-        lag_estimate1 = lag_estimate2;
-      }
-      float last_element = h[last_index] * h[last_index];
-      if (last_element > max_element1) {
-        return last_index;
-      }
-      return lag_estimate1;
-    };
-
-    auto MatchedFilterCore = [&](size_t x_start_index,
-                                 float x2_sum_threshold,
-                                 std::span<const float> x,
-                                 std::span<const float> y,
-                                 std::span<float> h,
-                                 bool* filters_updated,
-                                 float* error_sum) {
-      for (size_t i = 0; i < y.size(); ++i) {
-        float x2_sum = 0.f;
-        float s = 0;
-        size_t x_index = x_start_index;
-        for (size_t k = 0; k < h.size(); ++k) {
-          x2_sum += x[x_index] * x[x_index];
-          s += h[k] * x[x_index];
-          x_index = x_index < (x.size() - 1) ? x_index + 1 : 0;
-        }
-
-        float e = y[i] - s;
-        (*error_sum) += e * e;
-
-        if (x2_sum > x2_sum_threshold) {
-          const float alpha = kSmoothing * e / x2_sum;
-          size_t x_index = x_start_index;
-          for (size_t k = 0; k < h.size(); ++k) {
-            h[k] += alpha * x[x_index];
-            x_index = x_index < (x.size() - 1) ? x_index + 1 : 0;
-          }
-          *filters_updated = true;
-        }
-
-        x_start_index = x_start_index > 0 ? x_start_index - 1 : x.size() - 1;
-      }
-    };
 
     const float x2_sum_threshold =
         filters_[0].size() * kExcitationLimit * kExcitationLimit;
@@ -151,8 +151,8 @@ struct MatchedFilter {
 
   // マッチドフィルタの状態をリセットする。
   void Reset() {
-    for (auto& f : filters_) {
-      std::fill(f.begin(), f.end(), 0.f);
+    for (std::vector<float>& filter : filters_) {
+      std::fill(filter.begin(), filter.end(), 0.f);
     }
     winner_lag_ = -1;
     reported_lag_ = -1;

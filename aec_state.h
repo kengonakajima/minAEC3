@@ -19,12 +19,9 @@ struct AecState {
 
   // エコーパス変化時に必要なリセット処理を行う。
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability) {
-    const auto full_reset = [&]() {
+    if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
       erle_estimator_.Reset(true);
       filter_quality_state_.Reset();
-    };
-    if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
-      full_reset();
     }
     subtractor_output_analyzer_.HandleEchoPathChange();
   }

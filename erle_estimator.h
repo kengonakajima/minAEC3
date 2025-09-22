@@ -23,8 +23,8 @@ struct ErleEstimator {
   // ERLE推定値を最新のスペクトルに基づいて更新する。
   void Update(const std::array<float, kFftLengthBy2Plus1>& capture_spectrum,
               const std::array<float, kFftLengthBy2Plus1>& subtractor_spectrum) {
-    const auto& Y2 = capture_spectrum;
-    const auto& E2 = subtractor_spectrum;
+    const std::array<float, kFftLengthBy2Plus1>& Y2 = capture_spectrum;
+    const std::array<float, kFftLengthBy2Plus1>& E2 = subtractor_spectrum;
     if (++blocks_since_reset_ < startup_phase_length_blocks_) {
       return;
     }

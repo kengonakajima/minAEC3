@@ -6,7 +6,7 @@ struct FftBuffer {
   int read = 0; // 次に読み出す位置
     
   FftBuffer(size_t size) : size(static_cast<int>(size)), buffer(size) {
-    for (auto& fft_data : buffer) fft_data.Clear();
+    for (FftData& fft_data : buffer) fft_data.Clear();
   }
 
   int IncIndex(int index) const { return ::IncIndex(index, size); }

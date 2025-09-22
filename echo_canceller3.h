@@ -10,13 +10,11 @@ struct EchoCanceller3 {
   std::deque<Block> render_transfer_queue_; // Render呼び出しから渡されるブロックを一時保持
   BlockProcessor block_processor_; // ブロック単位でAEC処理を実行するコア
   Block render_block_; // キューから取り出したレンダーデータのワーク領域
-  Block capture_block_; // エコー除去対象のキャプチャブロック
     
   EchoCanceller3()
       : render_transfer_queue_(),
         block_processor_(),
-        render_block_(),
-        capture_block_() {}
+        render_block_() {}
 
 
   // レンダー信号を内部キューから取り込み、キャプチャ信号からエコーを除去する。
@@ -26,20 +24,21 @@ struct EchoCanceller3 {
       render_transfer_queue_.pop_front();
       block_processor_.BufferRender(render_block_);
     }
+    Block capture_block;
     std::span<const float> cap_view(capture->mono_data_const(), kBlockSize);
-    auto cap_dst = capture_block_.View();
+    std::span<float, kBlockSize> cap_dst = capture_block.View();
     std::copy(cap_view.begin(), cap_view.end(), cap_dst.begin());
-    block_processor_.ProcessCapture(&capture_block_);
+    block_processor_.ProcessCapture(&capture_block);
     float* out_ptr = capture->mono_data();
-    auto after = capture_block_.View();
-    std::copy(after.begin(), after.end(), out_ptr);
+    std::span<float, kBlockSize> processed = capture_block.View();
+    std::copy(processed.begin(), processed.end(), out_ptr);
   }
 
   // レンダー信号（64サンプル, モノラル）を解析して内部キューへ格納する。
   void AnalyzeRender(const AudioBuffer& render) {
     Block b;
     std::span<const float> buffer_view(render.mono_data_const(), kBlockSize);
-    auto v = b.View();
+    std::span<float, kBlockSize> v = b.View();
     std::copy(buffer_view.begin(), buffer_view.end(), v.begin());
     render_transfer_queue_.push_back(std::move(b));
     if (render_transfer_queue_.size() > 100) {

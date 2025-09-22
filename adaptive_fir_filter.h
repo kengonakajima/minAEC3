@@ -4,7 +4,7 @@ inline void ComputeFrequencyResponse(
     size_t num_partitions,
     const std::vector<FftData>& H,
     std::vector<std::array<float, kFftLengthBy2Plus1>>* H2) {
-  for (auto& H2_ch : *H2) {
+  for (std::array<float, kFftLengthBy2Plus1>& H2_ch : *H2) {
     H2_ch.fill(0.f);
   }
   for (size_t p = 0; p < num_partitions; ++p) {
@@ -61,7 +61,7 @@ inline void ComputeErl(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
     std::span<float> erl) {
   std::fill(erl.begin(), erl.end(), 0.f);
-  for (auto& H2_j : H2) {
+  for (const std::array<float, kFftLengthBy2Plus1>& H2_j : H2) {
     std::transform(H2_j.begin(), H2_j.end(), erl.begin(), erl.begin(),
                    std::plus<float>());
   }

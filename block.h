@@ -8,10 +8,10 @@ struct Block {
   }
 
   // データへアクセスするためのイテレータ。
-  auto begin() { return data_.begin(); }
-  auto begin() const { return data_.begin(); }
-  auto end() { return data_.begin() + kBlockSize; }
-  auto end() const { return data_.begin() + kBlockSize; }
+  std::array<float, kBlockSize>::iterator begin() { return data_.begin(); }
+  std::array<float, kBlockSize>::const_iterator begin() const { return data_.begin(); }
+  std::array<float, kBlockSize>::iterator end() { return data_.end(); }
+  std::array<float, kBlockSize>::const_iterator end() const { return data_.end(); }
 
   // std::span経由でデータ全体を参照する。
   std::span<float, kBlockSize> View() {

@@ -18,7 +18,7 @@ struct MovingAverage {
   // 現在の入力と過去 mem_len_-1 個の入力を平均して output に書き込む。
   void Average(std::span<const float> input, std::span<float> output) {
     std::copy(input.begin(), input.end(), output.begin());
-    for (auto i = memory_.begin(); i < memory_.end(); i += num_elem_) {
+    for (std::vector<float>::iterator i = memory_.begin(); i < memory_.end(); i += num_elem_) {
       std::transform(i, i + num_elem_, output.begin(), output.begin(), std::plus<float>());
     }
     for (float& o : output) {

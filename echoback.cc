@@ -150,7 +150,7 @@ static int pa_callback(const void* inputBuffer,
                        const PaStreamCallbackTimeInfo* /*timeInfo*/,
                        PaStreamCallbackFlags /*statusFlags*/,
                        void* userData){
-  auto* st = reinterpret_cast<State*>(userData);
+  State* st = reinterpret_cast<State*>(userData);
   const int16_t* in = reinterpret_cast<const int16_t*>(inputBuffer);
   int16_t* out = reinterpret_cast<int16_t*>(outputBuffer);
   const unsigned long n = blockSize; // mono (framesPerBuffer)

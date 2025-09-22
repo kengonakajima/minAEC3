@@ -36,9 +36,9 @@ struct FilterUpdateGain {
                size_t size_partitions,
                FftData* gain_fft) {
     const FftData& E = subtractor_output.E;
-    const auto& E2 = subtractor_output.E2;
+    const std::array<float, kFftLengthBy2Plus1>& E2 = subtractor_output.E2;
     FftData* G = gain_fft;
-    const auto& X2 = render_power;
+    const std::array<float, kFftLengthBy2Plus1>& X2 = render_power;
     ++call_counter_;
     if (++poor_excitation_counter_ < size_partitions ||
         call_counter_ <= size_partitions) {

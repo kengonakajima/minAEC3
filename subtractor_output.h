@@ -10,9 +10,14 @@ struct SubtractorOutput {
 
   // 信号のパワー量を更新する。
   void ComputeMetrics(std::span<const float> y) {
-    const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-    y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
-    e2 = std::accumulate(e.begin(), e.end(), 0.f, sum_of_squares);
+    y2 = 0.f;
+    for (const float sample : y) {
+      y2 += sample * sample;
+    }
+    e2 = 0.f;
+    for (const float residual_sample : e) {
+      e2 += residual_sample * residual_sample;
+    }
   }
 };
 

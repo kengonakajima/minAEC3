@@ -18,7 +18,7 @@ struct SuppressionFilter {
     std::array<float, kFftLength> e_extended;
     const float kIfftNormalization = 2.f / static_cast<float>(kFftLength);
     fft_.Ifft(E, &e_extended);
-    auto e0 = e->View();
+    std::span<float, kBlockSize> e0 = e->View();
     float* e0_old = e_output_old_.data();
     for (size_t i = 0; i < kFftLengthBy2; ++i) {
       float e0_i = e0_old[i] * kSqrtHanning128[kFftLengthBy2 + i];

@@ -34,7 +34,7 @@ struct Subtractor {
         update_gain_(),
         frequency_response_(
             std::vector<std::array<float, kFftLengthBy2Plus1>>(kFilterLengthBlocks)) {
-    for (auto& H2_k : frequency_response_) {
+    for (std::array<float, kFftLengthBy2Plus1>& H2_k : frequency_response_) {
       H2_k.fill(0.f);
     }
   }

@@ -40,7 +40,7 @@ struct RenderBuffer {
     X2->fill(0.f);
     int position = spectrum_buffer_->read;
     for (size_t j = 0; j < num_spectra; ++j) {
-      const auto& spectrum = spectrum_buffer_->buffer[position];
+      const std::array<float, kFftLengthBy2Plus1>& spectrum = spectrum_buffer_->buffer[position];
       for (size_t k = 0; k < X2->size(); ++k) {
         (*X2)[k] += spectrum[k];
       }

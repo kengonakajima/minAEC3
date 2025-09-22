@@ -145,3 +145,55 @@ $$\tilde{y}_b[m] = \text{IFFT}\left\{\tilde{Y}_b[k]\right\}[m + M]$$
 - `echo_remover.h`: 線形減算と非線形抑圧の統合。
 - `subtractor.h` / `adaptive_fir_filter.h`: PFDAF のコア実装。
 - `residual_echo_estimator.h`, `suppression_gain.h`, `suppression_filter.h`: 残留推定とゲイン適用。
+## 13. 構造体間の呼び出し・保持関係ツリー
+以下は `EchoCanceller3` をルートとして、主な構造体がどの構造体をメンバーとして保持し、どの処理を委譲しているかを示すテキストツリーである（矢印 `->` は「構造体がメンバーとして保持し、処理を呼び出す」関係を表す）。
+
+```
+EchoCanceller3
+├─ std::deque<Block> render_transfer_queue_
+├─ Block render_block_
+└─ BlockProcessor block_processor_
+    ├─ RenderDelayBuffer render_buffer_
+    │   ├─ BlockBuffer blocks_
+    │   ├─ SpectrumBuffer spectra_
+    │   ├─ FftBuffer ffts_
+    │   ├─ DownsampledRenderBuffer low_rate_
+    │   ├─ std::vector<float> render_ds_
+    │   └─ RenderBuffer echo_remover_buffer_
+    │        ├─ BlockBuffer* block_buffer_
+    │        ├─ SpectrumBuffer* spectrum_buffer_
+    │        └─ FftBuffer* fft_buffer_
+    ├─ EchoPathDelayEstimator delay_estimator_
+    │   ├─ MatchedFilter matched_filter_
+    │   │   └─ std::vector<std::vector<float>> filters_
+    │   └─ MatchedFilterLagAggregator matched_filter_lag_aggregator_
+    ├─ EchoRemover echo_remover_
+    │   ├─ Subtractor subtractor_
+    │   │   ├─ AdaptiveFirFilter filter_
+    │   │   │   ├─ Aec3Fft fft_
+    │   │   │   └─ std::vector<FftData> H_
+    │   │   ├─ FilterUpdateGain update_gain_
+    │   │   │   └─ std::array<float, kFftLengthBy2Plus1> H_error_
+    │   │   └─ std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response_
+    │   ├─ SuppressionGain suppression_gain_
+    │   │   ├─ MovingAverage nearend_smoother_
+    │   │   ├─ std::array<float, kFftLengthBy2Plus1> last_gain_
+    │   │   ├─ std::array<float, kFftLengthBy2Plus1> last_nearend_
+    │   │   └─ std::array<float, kFftLengthBy2Plus1> last_echo_
+    │   ├─ SuppressionFilter suppression_filter_
+    │   │   ├─ Aec3Fft fft_
+    │   │   └─ std::array<float, kFftLengthBy2> e_output_old_
+    │   ├─ ResidualEchoEstimator residual_echo_estimator_
+    │   │   ├─ std::array<float, kFftLengthBy2Plus1> X2_noise_floor_
+    │   │   └─ std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_
+    │   ├─ AecState aec_state_
+    │   │   ├─ FilteringQualityAnalyzer filter_quality_state_
+    │   │   ├─ ErleEstimator erle_estimator_
+    │   │   │   └─ std::array<float, kFftLengthBy2Plus1> erle_
+    │   │   └─ SubtractorOutputAnalyzer subtractor_output_analyzer_
+    │   ├─ std::array<float, kFftLengthBy2> e_old_
+    │   └─ std::array<float, kFftLengthBy2> y_old_
+    └─ RenderDelayBuffer::BufferingEvent render_event_
+```
+
+このツリーを辿ることで、AEC3 内部で各段階がどの構造体へ処理を委譲しているかを俯瞰できる。レンダーデータの保持・整列 (`RenderDelayBuffer`) と、エコー除去コア (`EchoRemover`) が `BlockProcessor` に集約され、その下で適応フィルタや残留エコー推定などの専用コンポーネントが階層的に構成されている。

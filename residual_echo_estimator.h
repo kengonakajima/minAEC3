@@ -14,6 +14,43 @@ struct ResidualEchoEstimator {
 
     
   ResidualEchoEstimator() { Reset(); }
+  static void GetRenderIndexesToAnalyze(const SpectrumBuffer& spectrum_buffer,
+                                        int filter_delay_blocks,
+                                        int* idx_start,
+                                        int* idx_stop) {
+    const size_t window_start =
+        std::max(0, filter_delay_blocks - static_cast<int>(kRenderPreWindowSize));
+    const size_t window_end =
+        filter_delay_blocks + static_cast<int>(kRenderPostWindowSize);
+    *idx_start = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
+    *idx_stop =
+        spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
+  }
+
+  static void ApplyNoiseGateToSpectrum(std::span<float, kFftLengthBy2Plus1> X2) {
+    for (size_t index = 0; index < kFftLengthBy2Plus1; ++index) {
+      if (kNoiseGatePower > X2[index]) {
+        X2[index] = std::max(0.f, X2[index] -
+                                   kNoiseGateSlope * (kNoiseGatePower - X2[index]));
+      }
+    }
+  }
+
+  static void ComputeEchoGeneratingPower(const SpectrumBuffer& spectrum_buffer,
+                                         int filter_delay_blocks,
+                                         std::span<float, kFftLengthBy2Plus1> X2) {
+    int idx_stop;
+    int idx_start;
+    GetRenderIndexesToAnalyze(spectrum_buffer, filter_delay_blocks,
+                              &idx_start, &idx_stop);
+    std::fill(X2.begin(), X2.end(), 0.f);
+    for (int index = idx_start; index != idx_stop; index = spectrum_buffer.IncIndex(index)) {
+      for (size_t bin = 0; bin < kFftLengthBy2Plus1; ++bin) {
+        X2[bin] = std::max(X2[bin], spectrum_buffer.buffer[index][bin]);
+      }
+    }
+  }
+
 
   // 残留エコーのパワースペクトルR2を推定する。
   void Estimate(const AecState& aec_state,
@@ -21,49 +58,12 @@ struct ResidualEchoEstimator {
                 const std::array<float, kFftLengthBy2Plus1>& S2_linear,
                 const std::array<float, kFftLengthBy2Plus1>& Y2,
                 std::array<float, kFftLengthBy2Plus1>* R2) {
-    auto GetRenderIndexesToAnalyze = [](const SpectrumBuffer& spectrum_buffer,
-                                        int filter_delay_blocks,
-                                        int* idx_start, int* idx_stop) {
-      size_t window_start =
-          std::max(0, filter_delay_blocks - static_cast<int>(kRenderPreWindowSize));
-      size_t window_end =
-          filter_delay_blocks + static_cast<int>(kRenderPostWindowSize);
-      *idx_start =
-          spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
-      *idx_stop =
-          spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
-    };
-
-    auto ApplyNoiseGate = [&](std::span<float, kFftLengthBy2Plus1> X2) {
-      for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-        if (kNoiseGatePower > X2[k]) {
-          X2[k] = std::max(0.f, X2[k] - kNoiseGateSlope * (kNoiseGatePower - X2[k]));
-        }
-      }
-    };
-
-    auto EchoGeneratingPower = [&](const SpectrumBuffer& spectrum_buffer,
-                                   int filter_delay_blocks,
-                                   std::span<float, kFftLengthBy2Plus1> X2) {
-      int idx_stop;
-      int idx_start;
-      GetRenderIndexesToAnalyze(spectrum_buffer, filter_delay_blocks,
-                                &idx_start, &idx_stop);
-
-      std::fill(X2.begin(), X2.end(), 0.f);
-      for (int k = idx_start; k != idx_stop; k = spectrum_buffer.IncIndex(k)) {
-        for (size_t j = 0; j < kFftLengthBy2Plus1; ++j) {
-          X2[j] = std::max(X2[j], spectrum_buffer.buffer[k][j]);
-        }
-      }
-    };
-
     // レンダー信号の定常ノイズパワーを推定。
     UpdateRenderNoisePower(render_buffer);
 
     if (aec_state.UsableLinearEstimate()) {
       // Linear mode: R2 = S2_linear / ERLE
-      const auto& erle = aec_state.Erle();
+      const std::array<float, kFftLengthBy2Plus1>& erle = aec_state.Erle();
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
         (*R2)[k] = S2_linear[k] / erle[k];
       }
@@ -71,9 +71,9 @@ struct ResidualEchoEstimator {
       // 非線形モード: エコー生成パワーとノイズゲートを組み合わせて推定
       const float echo_path_gain = 1.0f;  // simplified
       std::array<float, kFftLengthBy2Plus1> X2;
-      EchoGeneratingPower(render_buffer.GetSpectrumBuffer(),
-                          aec_state.MinDirectPathFilterDelay(), X2);
-      ApplyNoiseGate(X2);
+      ComputeEchoGeneratingPower(render_buffer.GetSpectrumBuffer(),
+                                  aec_state.MinDirectPathFilterDelay(), X2);
+      ApplyNoiseGateToSpectrum(X2);
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
         X2[k] -= kStationaryGateSlope * X2_noise_floor_[k];
         X2[k] = std::max(0.f, X2[k]);
@@ -90,7 +90,7 @@ struct ResidualEchoEstimator {
 
   // レンダー信号に含まれる定常ノイズ成分のパワーを更新する。
   void UpdateRenderNoisePower(const RenderBuffer& render_buffer) {
-    const auto& render_power = render_buffer.Spectrum(0);
+    const std::array<float, kFftLengthBy2Plus1>& render_power = render_buffer.Spectrum(0);
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       if (render_power[k] < X2_noise_floor_[k]) {
         X2_noise_floor_[k] = render_power[k];

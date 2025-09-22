@@ -19,6 +19,52 @@ struct SuppressionGain {
   }
 
 
+  static void ApplyLowFrequencyLimit(std::array<float, kFftLengthBy2Plus1>* gain) {
+    (*gain)[0] = (*gain)[1] = std::min((*gain)[1], (*gain)[2]);
+  }
+
+  static void ApplyHighFrequencyLimit(std::array<float, kFftLengthBy2Plus1>* gain) {
+    const size_t kFirstBandToLimit = (64 * 2000) / 8000;
+    const float min_upper_gain = (*gain)[kFirstBandToLimit];
+    for (size_t index = kFirstBandToLimit + 1; index < gain->size(); ++index) {
+      (*gain)[index] = std::min((*gain)[index], min_upper_gain);
+    }
+    (*gain)[kFftLengthBy2] = (*gain)[kFftLengthBy2Minus1];
+  }
+
+  static void ApplyAudibilityWeight(float threshold,
+                                    float normalizer,
+                                    size_t begin,
+                                    size_t end,
+                                    std::span<const float> echo,
+                                    std::span<float> weighted) {
+    for (size_t index = begin; index < end; ++index) {
+      if (echo[index] < threshold) {
+        const float tmp = (threshold - echo[index]) * normalizer;
+        weighted[index] = echo[index] * std::max(0.f, 1.f - tmp * tmp);
+      } else {
+        weighted[index] = echo[index];
+      }
+    }
+  }
+
+  static void WeightEchoForAudibilitySpan(std::span<const float> echo,
+                                          std::span<float> weighted_echo) {
+    const float kFloorPower = 2.f * 64.f;
+    const float kAudibilityLf = 10.f;
+    const float kAudibilityMf = 10.f;
+    const float kAudibilityHf = 10.f;
+    const float threshold_lf = kFloorPower * kAudibilityLf;
+    const float normalizer_lf = 1.f / (threshold_lf - kFloorPower);
+    ApplyAudibilityWeight(threshold_lf, normalizer_lf, 0, 3, echo, weighted_echo);
+    const float threshold_mf = kFloorPower * kAudibilityMf;
+    const float normalizer_mf = 1.f / (threshold_mf - kFloorPower);
+    ApplyAudibilityWeight(threshold_mf, normalizer_mf, 3, 7, echo, weighted_echo);
+    const float threshold_hf = kFloorPower * kAudibilityHf;
+    const float normalizer_hf = 1.f / (threshold_hf - kFloorPower);
+    ApplyAudibilityWeight(threshold_hf, normalizer_hf, 7, kFftLengthBy2Plus1, echo, weighted_echo);
+  }
+
   // 近端・エコー・残留エコーのスペクトルからゲインを算出する。
   void GetGain(
       const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
@@ -69,18 +115,6 @@ struct SuppressionGain {
       const std::array<float, kFftLengthBy2Plus1>& suppressor_input,
       const std::array<float, kFftLengthBy2Plus1>& residual_echo,
       std::array<float, kFftLengthBy2Plus1>* gain) {
-    // helpers
-    auto LimitLowFrequencyGains = [](std::array<float, kFftLengthBy2Plus1>* g) {
-      (*g)[0] = (*g)[1] = std::min((*g)[1], (*g)[2]);
-    };
-    auto LimitHighFrequencyGains = [](std::array<float, kFftLengthBy2Plus1>* g) {
-      const size_t kFirstBandToLimit = (64 * 2000) / 8000;
-      const float min_upper_gain = (*g)[kFirstBandToLimit];
-      std::for_each(g->begin() + kFirstBandToLimit + 1, g->end(),
-                    [min_upper_gain](float& a) { a = std::min(a, min_upper_gain); });
-      (*g)[kFftLengthBy2] = (*g)[kFftLengthBy2Minus1];
-    };
-
     gain->fill(1.f);
     std::array<float, kFftLengthBy2Plus1> max_gain;
     GetMaxGain(max_gain);
@@ -88,35 +122,7 @@ struct SuppressionGain {
     std::array<float, kFftLengthBy2Plus1> nearend;
     nearend_smoother_.Average(suppressor_input, nearend);
     std::array<float, kFftLengthBy2Plus1> weighted_residual_echo;
-    // Weight echo power: simplified soft gate by audibility thresholds
-    auto WeightEchoForAudibility = [](std::span<const float> echo,
-                                      std::span<float> weighted_echo) {
-      auto weigh = [](float threshold, float normalizer, size_t begin, size_t end,
-                      std::span<const float> echo, std::span<float> weighted) {
-        for (size_t k = begin; k < end; ++k) {
-          if (echo[k] < threshold) {
-            float tmp = (threshold - echo[k]) * normalizer;
-            weighted[k] = echo[k] * std::max(0.f, 1.f - tmp * tmp);
-          } else {
-            weighted[k] = echo[k];
-          }
-        }
-      };
-      const float kFloorPower = 2.f * 64.f;
-      const float kAudibilityLf = 10.f;
-      const float kAudibilityMf = 10.f;
-      const float kAudibilityHf = 10.f;
-      float threshold = kFloorPower * kAudibilityLf;
-      float normalizer = 1.f / (threshold - kFloorPower);
-      weigh(threshold, normalizer, 0, 3, echo, weighted_echo);
-      threshold = kFloorPower * kAudibilityMf;
-      normalizer = 1.f / (threshold - kFloorPower);
-      weigh(threshold, normalizer, 3, 7, echo, weighted_echo);
-      threshold = kFloorPower * kAudibilityHf;
-      normalizer = 1.f / (threshold - kFloorPower);
-      weigh(threshold, normalizer, 7, kFftLengthBy2Plus1, echo, weighted_echo);
-    };
-    WeightEchoForAudibility(residual_echo, weighted_residual_echo);
+    WeightEchoForAudibilitySpan(residual_echo, weighted_residual_echo);
     std::array<float, kFftLengthBy2Plus1> min_gain;
     GetMinGain(weighted_residual_echo, last_nearend_, last_echo_, min_gain);
     GainToNoAudibleEcho(nearend, weighted_residual_echo, &G);
@@ -127,8 +133,8 @@ struct SuppressionGain {
     std::copy(nearend.begin(), nearend.end(), last_nearend_.begin());
     std::copy(weighted_residual_echo.begin(), weighted_residual_echo.end(),
               last_echo_.begin());
-    LimitLowFrequencyGains(gain);
-    LimitHighFrequencyGains(gain);
+    ApplyLowFrequencyLimit(gain);
+    ApplyHighFrequencyLimit(gain);
     std::copy(gain->begin(), gain->end(), last_gain_.begin());
     for (size_t i = 0; i < kFftLengthBy2Plus1; ++i) {
       float v = (*gain)[i];
@@ -149,7 +155,7 @@ struct SuppressionGain {
                         : 1.f;
       min_gain[k] = std::min(min_gain[k], 1.f);
     }
-    const float& dec = kMaxDecFactorLf;
+    const float dec = kMaxDecFactorLf;
     const int kLastLfSmoothingBand = 5;
     const int kLastPermanentLfSmoothingBand = 0;
     for (int k = 0; k <= kLastLfSmoothingBand; ++k) {
@@ -162,7 +168,7 @@ struct SuppressionGain {
   }
 
   void GetMaxGain(std::span<float> max_gain) const {
-    const auto& inc = kMaxIncFactor;
+    const float inc = kMaxIncFactor;
     const float floor = 0.00001f;
     for (size_t k = 0; k < max_gain.size(); ++k) {
       max_gain[k] = std::min(std::max(last_gain_[k] * inc, floor), 1.f);

@@ -7,7 +7,7 @@ struct SpectrumBuffer {
     
   SpectrumBuffer(size_t size)
       : size(static_cast<int>(size)), buffer(size) {
-    for (auto& c : buffer) {
+    for (std::array<float, kFftLengthBy2Plus1>& c : buffer) {
       std::fill(c.begin(), c.end(), 0.f);
     }
   }
