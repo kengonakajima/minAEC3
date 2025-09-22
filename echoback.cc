@@ -87,8 +87,7 @@ static void process_available_blocks(State& s){
       // AEC3 直結: Render/ Capture を渡して処理
       s.cap_audio.CopyFrom(rec.data());
       s.ref_audio.CopyFrom(ref.data());
-      s.aec.AnalyzeRender(s.ref_audio);
-      s.aec.ProcessCapture(&s.cap_audio);
+      s.aec.ProcessBlock(&s.cap_audio, &s.ref_audio);
       s.cap_audio.CopyTo(out.data());
 
       // MatchedFilter による推定遅延が変化したら1行だけ通知。

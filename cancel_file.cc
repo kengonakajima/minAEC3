@@ -48,9 +48,8 @@ int main(int argc, char** argv){
   processed.resize(N * kBlockSize);
   for (size_t n=0;n<N;n++){
     ref.CopyFrom(&x.samples[n*kBlockSize]);
-    aec.AnalyzeRender(ref);
     cap.CopyFrom(&y.samples[n*kBlockSize]);
-    aec.ProcessCapture(&cap);
+    aec.ProcessBlock(&cap, &ref);
     cap.CopyTo(&processed[n*kBlockSize]);
     const EchoRemover::LastMetrics& erm = aec.block_processor_.echo_remover_.last_metrics_;
     int dblk = aec.block_processor_.estimated_delay_blocks_;

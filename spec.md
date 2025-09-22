@@ -30,9 +30,9 @@ AEC3 は 64 サンプル単位のブロック処理で動作し、図示する�
 
 ## 4. レンダー信号バッファリング
 
-`EchoCanceller3::AnalyzeRender` で取得した $\mathbf{x}_b$ は
-`RenderDelayBuffer` に時系列順でエンキューされる。
+`EchoCanceller3::ProcessBlock` は、呼び出し時に渡されたレンダー信号ブロックを `RenderDelayBuffer` に時系列順でエンキューし、キャプチャ処理直前に `BlockProcessor` へ供給する。
 同時に、FFT ドメイン表現 $\mathbf{X}_b$ を保持する多段バッファ (リングバッファ) が `RenderBuffer` に更新される。
+レンダー信号が未到着のフレームでは `ProcessBlock` をキャプチャのみで呼び出し、キューに残っている既存ブロックを消費する。
 
 - 各ブロックはハン窓 $w[m]$ を掛けた後、ゼロパディングして $L$ 点 FFT を計算し、複素スペクトル $X_b[k]$ を得る。
 - `RenderBuffer` は $P$ 個の最新 FFT ブロックを循環参照できるように並び替え、後段のパーティション畳み込みで使用する。
@@ -151,7 +151,6 @@ $$\tilde{y}_b[m] = \text{IFFT}\left\{\tilde{Y}_b[k]\right\}[m + M]$$
 ```
 EchoCanceller3
 ├─ std::deque<Block> render_transfer_queue_
-├─ Block render_block_
 └─ BlockProcessor block_processor_
     ├─ RenderDelayBuffer render_buffer_
     │   ├─ BlockBuffer blocks_
