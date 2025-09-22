@@ -62,7 +62,7 @@ clean:
 EMXX?=em++
 WASM_DIST=dist
 WASM_JS=$(WASM_DIST)/aec3_wasm.js
-WASM_SRCS=wasm/aec3_wasm.cc ooura_fft.cc
+WASM_SRCS=wasm/aec3_wasm.cc
 
 wasm:
 	mkdir -p $(WASM_DIST)
@@ -73,26 +73,3 @@ wasm:
 	  -s EXPORTED_RUNTIME_METHODS='[cwrap,ccall,HEAP16]'
 
 
-# Cシム（demo/aec3.cpp）は撤去
-# wavリーダ/ライタは最小構成では使用しない
-# echo_canceller3_config は撤去
- 
-
- 
-ooura_fft.o : ooura_fft.cc
-	$(CXX) -c $(CPPFLAGS) ooura_fft.cc
- 
- 
- 
-
- 
- 
-
-
- 
-
-
-
-# added webrtc 2022sep
- 
- 
