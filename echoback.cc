@@ -47,6 +47,7 @@ struct State {
 
   // 1秒平均キャンセル量（ERLE相当）の集計
   double erle_in_energy_accum = 0.0;
+  double erle_linear_energy_accum = 0.0;
   double erle_out_energy_accum = 0.0;
   int erle_blocks_accum = 0;  // 250ブロック ≒ 1秒
 
@@ -102,26 +103,33 @@ static void process_available_blocks(State& s){
         s.last_logged_delay_blocks = cur;
       }
 
-      // 1秒に1回、キャンセル量（ERLE近似）を出力（dB）。
+      // 1秒に1回、線形/非線形別のキャンセル量（ERLE近似）を出力（dB）。
       {
-        double ein = 0.0, eout = 0.0;
-        for (int i = 0; i < s.block_size; ++i) {
-          const double x = static_cast<double>(rec[i]);
-          const double y = static_cast<double>(out[i]);
-          ein += x * x;
-          eout += y * y;
-        }
-        s.erle_in_energy_accum += ein;
-        s.erle_out_energy_accum += eout;
-        s.erle_blocks_accum += 1;
-        if (s.erle_blocks_accum >= static_cast<int>(kNumBlocksPerSecond)) {
-          constexpr double kEps = 1e-9;
-          const double ratio = (s.erle_in_energy_accum + kEps) / (s.erle_out_energy_accum + kEps);
-          const double erle_db = 10.0 * std::log10(ratio);
-          std::fprintf(stderr, "[AEC3] 1秒平均キャンセル量: %.1f dB\n", erle_db);
-          s.erle_in_energy_accum = 0.0;
-          s.erle_out_energy_accum = 0.0;
-          s.erle_blocks_accum = 0;
+        const EchoRemover::LastMetrics& metrics = s.aec.GetLastMetrics();
+        if (metrics.valid) {
+          s.erle_in_energy_accum += static_cast<double>(metrics.y2);
+          s.erle_linear_energy_accum += static_cast<double>(metrics.e2);
+          s.erle_out_energy_accum += static_cast<double>(metrics.output_e2);
+          s.erle_blocks_accum += 1;
+          if (s.erle_blocks_accum >= static_cast<int>(kNumBlocksPerSecond)) {
+            constexpr double kEps = 1e-9;
+            const double ein = s.erle_in_energy_accum;
+            const double elin = s.erle_linear_energy_accum;
+            const double eout = s.erle_out_energy_accum;
+            const double total_ratio = (ein + kEps) / (eout + kEps);
+            const double linear_ratio = (ein + kEps) / (elin + kEps);
+            const double nonlinear_ratio = (elin + kEps) / (eout + kEps);
+            const double total_db = 10.0 * std::log10(total_ratio);
+            const double linear_db = 10.0 * std::log10(linear_ratio);
+            const double nonlinear_db = 10.0 * std::log10(nonlinear_ratio);
+            std::fprintf(stderr,
+                         "[AEC3] 1秒平均キャンセル量: 総合=%.1f dB (線形=%.1f dB, 非線形=%.1f dB)\n",
+                         total_db, linear_db, nonlinear_db);
+            s.erle_in_energy_accum = 0.0;
+            s.erle_linear_energy_accum = 0.0;
+            s.erle_out_energy_accum = 0.0;
+            s.erle_blocks_accum = 0;
+          }
         }
       }
     }

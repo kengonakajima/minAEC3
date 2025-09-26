@@ -38,6 +38,10 @@ struct EchoCanceller3 {
   void SetProcessingModes(bool enable_linear_filter, bool enable_nonlinear_suppressor) {
     block_processor_.SetProcessingModes(enable_linear_filter, enable_nonlinear_suppressor);
   }
+
+  const EchoRemover::LastMetrics& GetLastMetrics() const {
+    return block_processor_.GetLastMetrics();
+  }
   
 };
  

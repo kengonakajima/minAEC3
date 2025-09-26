@@ -62,6 +62,10 @@ struct BlockProcessor {
     echo_remover_.SetProcessingModes(enable_linear_filter, enable_nonlinear_suppressor);
   }
 
+  const EchoRemover::LastMetrics& GetLastMetrics() const {
+    return echo_remover_.last_metrics();
+  }
+
   bool capture_properly_started_ = false;
   bool render_properly_started_ = false;
   RenderDelayBuffer render_buffer_;
@@ -70,4 +74,3 @@ struct BlockProcessor {
   RenderDelayBuffer::BufferingEvent render_event_;
   int estimated_delay_blocks_ = -1;
 };
-

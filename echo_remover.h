@@ -15,6 +15,10 @@ struct EchoRemover {
       float y2=0.f;
       float erle_avg=0.f;
       bool linear_usable=false;
+      float output_e2=0.f;
+      bool linear_enabled=false;
+      bool nonlinear_enabled=false;
+      bool valid=false;
   } last_metrics_;
 
     
@@ -32,6 +36,8 @@ struct EchoRemover {
     enable_linear_filter_ = enable_linear_filter;
     enable_nonlinear_suppressor_ = enable_nonlinear_suppressor;
   }
+
+  const LastMetrics& last_metrics() const { return last_metrics_; }
   
 
   // キャプチャ信号1ブロックからエコー成分を除去する。
@@ -52,6 +58,10 @@ struct EchoRemover {
     std::span<float, kBlockSize> capture_view = y->View();
     std::span<const float> capture_view_const(capture_view.data(), capture_view.size());
 
+    last_metrics_.linear_enabled = enable_linear_filter_;
+    last_metrics_.nonlinear_enabled = enable_nonlinear_suppressor_;
+    last_metrics_.valid = false;
+
     if (echo_path_variability.DelayChanged()) {
       subtractor_.HandleEchoPathChange(echo_path_variability);
       aec_state_.HandleEchoPathChange(echo_path_variability);
@@ -59,6 +69,16 @@ struct EchoRemover {
 
     // 何も使わない（両方無効）の場合は素通し
     if (!enable_linear_filter_ && !enable_nonlinear_suppressor_) {
+      float bypass_energy = 0.f;
+      for (const float sample : capture_view_const) {
+        bypass_energy += sample * sample;
+      }
+      last_metrics_.y2 = bypass_energy;
+      last_metrics_.e2 = bypass_energy;
+      last_metrics_.output_e2 = bypass_energy;
+      last_metrics_.erle_avg = 1.f;
+      last_metrics_.linear_usable = false;
+      last_metrics_.valid = true;
       return;  // yはそのまま
     }
 
@@ -70,6 +90,17 @@ struct EchoRemover {
       if (!enable_nonlinear_suppressor_) {
         // 線形のみ: e をそのまま時間領域出力にする
         std::copy(e.begin(), e.end(), capture_view.begin());
+        constexpr float kEps = 1e-9f;
+        last_metrics_.y2 = subtractor_output.y2;
+        last_metrics_.e2 = subtractor_output.e2;
+        last_metrics_.output_e2 = subtractor_output.e2;
+        const float ratio =
+            (subtractor_output.e2 + kEps) > 0.f
+                ? subtractor_output.y2 / (subtractor_output.e2 + kEps)
+                : 1.f;
+        last_metrics_.erle_avg = ratio;
+        last_metrics_.linear_usable = aec_state_.UsableLinearEstimate();
+        last_metrics_.valid = true;
         return;
       }
     } else {
@@ -128,6 +159,14 @@ struct EchoRemover {
     last_metrics_.y2 = subtractor_output.y2;
     last_metrics_.erle_avg = erle_avg;
     last_metrics_.linear_usable = aec_state_.UsableLinearEstimate();
+    float output_energy = 0.f;
+    for (const float sample : capture_view) {
+      output_energy += sample * sample;
+    }
+    last_metrics_.output_e2 = output_energy;
+    last_metrics_.linear_enabled = enable_linear_filter_;
+    last_metrics_.nonlinear_enabled = enable_nonlinear_suppressor_;
+    last_metrics_.valid = true;
   }
   
 };
