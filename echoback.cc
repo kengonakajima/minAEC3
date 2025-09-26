@@ -23,7 +23,7 @@ struct State {
   // 1ch 固定（PortAudioデバイス設定も1ch）
   int latency_ms = 0;               // ローカルエコー用ジッタバッファの目標遅延（ms）
   size_t latency_samples = 0;       // dev_sr*latency_ms/1000 で再計算される予定値
-  int loopback_delay_ms = 0;        // 遠端へ送る経路に加える遅延（ms）
+  int loopback_delay_ms = 150;      // 遠端へ送る経路に加える遅延（ms）
   size_t loopback_delay_samples = 0;
 
   // デバイスサンプリング周波数 (dev_sr) で動作するFIFO群
