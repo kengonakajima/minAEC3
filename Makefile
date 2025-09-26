@@ -27,22 +27,19 @@ all: echoback cancel_file
 
 
 
-PORTAUDIO_HOME?=$(HOME)/portaudio
-PA_FALLBACK_INCDIR1=/opt/homebrew/opt/portaudio/include
-PA_FALLBACK_INCDIR2=/usr/local/include
-PA_FALLBACK_LIBDIR1=/opt/homebrew/opt/portaudio/lib
-PA_FALLBACK_LIBDIR2=/usr/local/lib
+PA_DIR:=$(abspath pa)
+PA_INCLUDE_DIR:=$(PA_DIR)/include
+PA_STATIC_LIB:=$(PA_DIR)/libportaudio.a
+PA_INCFLAGS:=-I$(PA_INCLUDE_DIR)
 
 # ヘッダをまとめて列挙（追加・削除に追随）
 HEADERS := $(wildcard *.h)
 
 # Echoback: port of echoback.js (local echo loop + AEC3)
-echoback: echoback.cc libportaudio.a $(HEADERS)
-	$(CXX) -o echoback $(CPPFLAGS) -I$(PORTAUDIO_HOME)/include -I$(PA_FALLBACK_INCDIR1) -I$(PA_FALLBACK_INCDIR2) -I$(PORTAUDIO_HOME) \
+echoback: echoback.cc $(PA_STATIC_LIB) $(HEADERS)
+	$(CXX) -o echoback $(CPPFLAGS) $(PA_INCFLAGS) \
 		echoback.cc \
-		-L$(PORTAUDIO_HOME) -L$(PORTAUDIO_HOME)/lib -L$(PA_FALLBACK_LIBDIR1) -L$(PA_FALLBACK_LIBDIR2) \
-		-Wl,-rpath,$(PORTAUDIO_HOME) -Wl,-rpath,$(PORTAUDIO_HOME)/lib -Wl,-rpath,$(PA_FALLBACK_LIBDIR1) -Wl,-rpath,$(PA_FALLBACK_LIBDIR2) \
-		./libportaudio.a -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreServices 
+		$(PA_STATIC_LIB) -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework CoreServices
 
 # Offline comparator (no PortAudio)
 cancel_file: cancel_file.cc $(HEADERS)
@@ -71,5 +68,3 @@ wasm:
 	  -s ALLOW_MEMORY_GROWTH=1 \
 	  -s EXPORTED_FUNCTIONS='[_aec3_create,_aec3_destroy,_aec3_set_modes,_aec3_analyze,_aec3_process,_aec3_get_estimated_delay_blocks,_malloc,_free]' \
 	  -s EXPORTED_RUNTIME_METHODS='[cwrap,ccall,HEAP16]'
-
-

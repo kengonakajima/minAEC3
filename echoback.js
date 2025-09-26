@@ -1,5 +1,5 @@
 // Node echoback: PortAudio(PAmac.node) + AEC3 WASM (16kHz mono, 64-sample blocks)
-// Usage: node echoback.js [--passthrough] [--no-linear] [--no-nonlinear] [latency_ms]
+// Usage: node echoback.js [--passthrough] [--no-linear] [--no-nonlinear] [--latency-ms=N] [--loopback-delay-ms=N]
 
 const path = require('path');
 const assert = require('assert');
@@ -8,8 +8,11 @@ const assert = require('assert');
 let passthrough = false;
 let enableLinear = true;
 let enableNonlinear = true;
-let latencyMs = 200; // default
-for (const arg of process.argv.slice(2)) {
+let latencyMs = 0; // default
+let loopbackDelayMs = 0;
+const cliArgs = process.argv.slice(2);
+for (let i = 0; i < cliArgs.length; ++i) {
+  const arg = cliArgs[i];
   if (arg === '--passthrough' || arg === '-p') {
     passthrough = true;
   } else if (arg === '--no-linear') {
@@ -21,10 +24,50 @@ for (const arg of process.argv.slice(2)) {
   } else if (arg === '--nonlinear-only') {
     enableLinear = false; enableNonlinear = true;
   } else if (arg === '--help' || arg === '-h') {
-    console.error('Usage: node echoback.js [--passthrough] [--no-linear] [--no-nonlinear] [latency_ms]');
+    console.error('Usage: node echoback.js [--passthrough] [--no-linear] [--no-nonlinear] [--latency-ms=N] [--loopback-delay-ms=N]');
     process.exit(0);
-  } else if (/^\d+$/.test(arg)) {
-    latencyMs = Math.max(1, Math.min(10000, parseInt(arg, 10)));
+  } else if (arg === '--latency-ms') {
+    if (i + 1 < cliArgs.length) {
+      const value = cliArgs[i + 1];
+      const parsed = parseInt(value, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10000) {
+        latencyMs = parsed;
+      } else {
+        console.error('Invalid --latency-ms value:', value);
+      }
+      i += 1;
+    } else {
+      console.error('--latency-ms requires a value');
+    }
+  } else if (arg.startsWith('--latency-ms=')) {
+    const value = arg.split('=', 2)[1];
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10000) {
+      latencyMs = parsed;
+    } else {
+      console.error('Invalid --latency-ms value:', value);
+    }
+  } else if (arg === '--loopback-delay-ms') {
+    if (i + 1 < cliArgs.length) {
+      const value = cliArgs[i + 1];
+      const parsed = parseInt(value, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10000) {
+        loopbackDelayMs = parsed;
+      } else {
+        console.error('Invalid --loopback-delay-ms value:', value);
+      }
+      i += 1;
+    } else {
+      console.error('--loopback-delay-ms requires a value');
+    }
+  } else if (arg.startsWith('--loopback-delay-ms=')) {
+    const value = arg.split('=', 2)[1];
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10000) {
+      loopbackDelayMs = parsed;
+    } else {
+      console.error('Invalid --loopback-delay-ms value:', value);
+    }
   } else {
     console.error('Unknown arg:', arg);
   }
@@ -34,6 +77,7 @@ const kSr = 16000;
 const kBlock = 64; // 4ms @ 16k
 const kBlocksPerSec = 250;
 const latencySamplesTarget = Math.floor((kSr * latencyMs) / 1000);
+const loopbackDelaySamplesTarget = Math.floor((kSr * loopbackDelayMs) / 1000);
 
 // PAmac.node
 let PortAudio = null;
@@ -93,12 +137,13 @@ function toInt16Array(x) {
   let recQ = [];
   let refQ = [];
   let jitterQ = [];
+  let loopbackDelayLine = loopbackDelaySamplesTarget > 0 ? new Array(loopbackDelaySamplesTarget).fill(0) : [];
   let needJitter = true;
   let lastDelay = -2; // -2: uninitialized, -1: no estimate
 
   let erleIn = 0.0, erleOut = 0.0, erleBlocks = 0;
 
-  console.error(`echoback (16k mono): mode=${passthrough ? 'passthrough' : (enableLinear && enableNonlinear ? 'aec3' : (!enableLinear ? 'nonlinear-only' : 'linear-only'))}, latency_ms=${latencyMs} (samples=${latencySamplesTarget})`);
+  console.error(`echoback (16k mono): mode=${passthrough ? 'passthrough' : (enableLinear && enableNonlinear ? 'aec3' : (!enableLinear ? 'nonlinear-only' : 'linear-only'))}, latency_ms=${latencyMs} (samples=${latencySamplesTarget}), loopback_delay_ms=${loopbackDelayMs} (samples=${loopbackDelaySamplesTarget})`);
 
   function processBlocks() {
     // run as many 64-sample blocks as we can
@@ -142,11 +187,16 @@ function toInt16Array(x) {
         }
       }
 
-      // next ref comes from processed output
+      // 参照キューには遅延なしの処理済みブロックを入れる
       for (let i = 0; i < kBlock; i++) refQ.push(out[i]);
 
-      // accumulate to local jitter
-      for (let i = 0; i < kBlock; i++) jitterQ.push(out[i]);
+      // simulate loopback path delay before the signal returns locally
+      for (let i = 0; i < kBlock; i++) loopbackDelayLine.push(out[i]);
+      let looped = popBlockI16(loopbackDelayLine);
+      if (!looped) looped = new Int16Array(kBlock);
+
+      // accumulate to local jitter after loopback delay
+      for (let i = 0; i < kBlock; i++) jitterQ.push(looped[i]);
       if (needJitter && jitterQ.length > latencySamplesTarget) needJitter = false;
 
       // produce speaker block from jitter
@@ -188,4 +238,3 @@ function toInt16Array(x) {
 
   process.on('SIGINT', () => { console.error('stopped.'); shutdown(); process.exit(0); });
 })();
-
