@@ -17,8 +17,8 @@ struct FilterUpdateGain {
 
 
   // 既知のエコーパス変化が発生した際のリセット処理。
-  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability) {
-    if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
+  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
+    if (echo_path_variability != EchoPathVariability::kNone) {
       H_error_.fill(kHErrorInitial);
     }
     call_counter_ = 0;

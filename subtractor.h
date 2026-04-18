@@ -83,8 +83,8 @@ struct Subtractor {
     }
   }
 
-  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability) {
-    if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
+  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
+    if (echo_path_variability != EchoPathVariability::kNone) {
       filter_.HandleEchoPathChange();
       update_gain_.HandleEchoPathChange(echo_path_variability);
     }

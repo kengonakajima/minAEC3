@@ -19,9 +19,9 @@ struct BlockProcessor {
       return;
     }
 
-    EchoPathVariability echo_path_variability(EchoPathVariability::kNone);
+    EchoPathVariability echo_path_variability = EchoPathVariability::kNone;
     if (render_event_ == RenderDelayBuffer::kRenderOverrun && render_properly_started_) {
-      echo_path_variability.delay_change = EchoPathVariability::kBufferFlush;
+      echo_path_variability = EchoPathVariability::kBufferFlush;
       delay_estimator_.Reset();
     }
     render_event_ = RenderDelayBuffer::kNone;
@@ -41,7 +41,7 @@ struct BlockProcessor {
     if (estimated_delay_blocks_ >= 0) {
       bool delay_change = render_buffer_.AlignFromDelay(static_cast<size_t>(estimated_delay_blocks_));
       if (delay_change) {
-        echo_path_variability.delay_change = EchoPathVariability::kNewDetectedDelay;
+        echo_path_variability = EchoPathVariability::kNewDetectedDelay;
       }
     }
 

@@ -58,7 +58,7 @@ struct EchoRemover {
 
     last_metrics_.valid = false;
 
-    if (echo_path_variability.DelayChanged()) {
+    if (echo_path_variability != EchoPathVariability::kNone) {
       subtractor_.HandleEchoPathChange(echo_path_variability);
       aec_state_.HandleEchoPathChange(echo_path_variability);
     }

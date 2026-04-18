@@ -16,8 +16,8 @@ struct AecState {
   int MinDirectPathFilterDelay() const { return 0; }
 
   // エコーパス変化時に必要なリセット処理を行う。
-  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability) {
-    if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
+  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
+    if (echo_path_variability != EchoPathVariability::kNone) {
       erle_estimator_.Reset(true);
       blocks_since_reset_ = 0;
     }
