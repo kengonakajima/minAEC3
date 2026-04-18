@@ -7,16 +7,13 @@ struct FilterUpdateGain {
   static constexpr float kErrorCeil = 2.f; // 誤差推定H_error_の上限値
   static constexpr float kNoiseGate = 20075344.f; // レンダーパワーがこの値未満なら更新を抑制
   static constexpr float kHErrorInitial = 10000.f; // 誤差推定の初期値
-  static constexpr int kPoorExcitationCounterInitial = 1000; // 低励起状態の判定用カウンタ初期値
   std::array<float, kFftLengthBy2Plus1> H_error_; // 各周波数ビンのフィルタ誤差推定値
-  size_t poor_excitation_counter_; // 励起不足状態が続いたフレーム数
-  size_t call_counter_ = 0; // Computeを呼び出した累計回数
-    
-  FilterUpdateGain()
-      : poor_excitation_counter_(kPoorExcitationCounterInitial) {
+  size_t call_counter_ = 0; // Computeを呼び出した累計回数(パーティション履歴が満タンになるまで更新を止める)
+
+  FilterUpdateGain() {
     H_error_.fill(kHErrorInitial);
   }
-  
+
 
 
   // 既知のエコーパス変化が発生した際のリセット処理。
@@ -24,7 +21,6 @@ struct FilterUpdateGain {
     if (echo_path_variability.delay_change != EchoPathVariability::kNone) {
       H_error_.fill(kHErrorInitial);
     }
-    poor_excitation_counter_ = kPoorExcitationCounterInitial;
     call_counter_ = 0;
   }
 
@@ -40,8 +36,8 @@ struct FilterUpdateGain {
     FftData* G = gain_fft;
     const std::array<float, kFftLengthBy2Plus1>& X2 = render_power;
     ++call_counter_;
-    if (++poor_excitation_counter_ < size_partitions ||
-        call_counter_ <= size_partitions) {
+    if (call_counter_ <= size_partitions) {
+      // パーティション履歴が満タンになるまで更新を止める(PFDAFの初期暴発を防ぐ)
       G->re.fill(0.f);
       G->im.fill(0.f);
     } else {
