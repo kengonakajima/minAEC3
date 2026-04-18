@@ -132,7 +132,7 @@ struct EchoRemover {
     }
     Y.Spectrum(Y2);
     E.Spectrum(E2);
-    aec_state_.Update(*render_buffer, E2, Y2, subtractor_output);
+    aec_state_.Update(E2, Y2);
 
     const FftData& Y_fft = aec_state_.UsableLinearEstimate() ? E : Y;
     std::array<float, kFftLengthBy2Plus1> G;
