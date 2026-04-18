@@ -86,7 +86,6 @@ inline int OffsetIndex(int index, int offset, int size) {
 // エコーパスの変化を通知する
 enum class EchoPathVariability {
   kNone,
-  kBufferFlush,
   kNewDetectedDelay
 };
 // OLA分析/合成で用いる128ポイントの平方根ハニング窓係数。

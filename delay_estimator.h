@@ -19,12 +19,6 @@ inline void DecimateBy4(std::span<const float> in, std::span<float> out) {
 
 // レンダーブロックを遅延付きで保持し、指定遅延で取り出せるようにする。
 struct RenderDelayBuffer {
-  enum BufferingEvent {
-      kNone, // イベントなし
-      kRenderUnderrun, // レンダー不足（読み出し側が先行）
-      kRenderOverrun // レンダー過多（書き込み側が先行）
-  };
-
   inline static constexpr size_t kDownSamplingFactor = 4; // 遅延推定で用いるダウンサンプリング倍率
   const int sub_block_size_; // ダウンサンプル後のサブブロック長
   BlockBuffer blocks_; // レンダーブロックのリングバッファ
@@ -61,29 +55,16 @@ struct RenderDelayBuffer {
   }
 
   // レンダーブロックをバッファへ挿入する。
-  BufferingEvent Insert(const Block& block) {
+  void Insert(const Block& block) {
     const int previous_write = blocks_.write;
     IncrementWriteIndices();
-    BufferingEvent event = RenderOverrun() ? kRenderOverrun : kNone;
     InsertBlock(block, previous_write);
-    if (event != kNone) {
-      Reset();
-    }
-    return event;
   }
 
-  // バッファを1ステップ進め、特殊イベントの有無を返す。
-  BufferingEvent PrepareCaptureProcessing() {
-    BufferingEvent event = kNone;
-    if (RenderUnderrun()) {
-      IncrementReadIndices();
-      if (delay_ > 0) delay_ = delay_ - 1;
-      event = kRenderUnderrun;
-    } else {
-      IncrementLowRateReadIndices();
-      IncrementReadIndices();
-    }
-    return event;
+  // バッファを1ステップ進める。
+  void PrepareCaptureProcessing() {
+    IncrementLowRateReadIndices();
+    IncrementReadIndices();
   }
 
 
@@ -155,8 +136,6 @@ struct RenderDelayBuffer {
       ffts_.DecReadIndex();
     }
   }
-  bool RenderOverrun() { return low_rate_.read == low_rate_.write || blocks_.read == blocks_.write; }
-  bool RenderUnderrun() { return low_rate_.read == low_rate_.write; }
 };
 
  
