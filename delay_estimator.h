@@ -332,15 +332,14 @@ struct HighestPeakAggregator {
 };
 // マッチドフィルタが出す遅延推定を集約し、信頼できる値を選び出す。
 struct MatchedFilterLagAggregator {
+  static constexpr int kInitialThreshold = 5;   // 未収束時に候補確定に必要な出現回数
+  static constexpr int kConvergedThreshold = 20; // 収束済み判定に必要な出現回数
   bool significant_candidate_found_ = false; // 収束と見なせる候補が見つかったか
-  struct Thresholds { int initial; int converged; }; // 遅延確定のための閾値群
-  const Thresholds thresholds_ {5, 20}; // 初期判定と収束判定の閾値
   const int headroom_; // レンダー遅延の先行マージン（サンプル数）
   HighestPeakAggregator highest_peak_aggregator_; // ヒストグラム集約器
-    
+
   MatchedFilterLagAggregator(size_t max_filter_lag)
-      : thresholds_(),
-        headroom_(static_cast<int>(32 / 4)),  // 64サンプル/4=16サンプル → マージンを簡略化して設定
+      : headroom_(static_cast<int>(32 / 4)),  // 64サンプル/4=16サンプル → マージンを簡略化して設定
         highest_peak_aggregator_(max_filter_lag) {}
 
 
@@ -359,9 +358,9 @@ struct MatchedFilterLagAggregator {
       std::span<const int> histogram = highest_peak_aggregator_.histogram();
       int candidate = highest_peak_aggregator_.candidate();
       significant_candidate_found_ = significant_candidate_found_ ||
-                                     histogram[candidate] > thresholds_.converged;
-      if (histogram[candidate] > thresholds_.converged ||
-          (histogram[candidate] > thresholds_.initial &&
+                                     histogram[candidate] > kConvergedThreshold;
+      if (histogram[candidate] > kConvergedThreshold ||
+          (histogram[candidate] > kInitialThreshold &&
            !significant_candidate_found_)) {
         return candidate;
       }

@@ -194,17 +194,6 @@ struct AdaptiveFirFilter {
     }
   }
 
-  // フィルタのパーティション数（固定）を返す。
-  size_t SizePartitions() const { return size_partitions_; }
-
-  // 各パーティションの周波数応答を計算する。
-  // H2: 出力先
-  void ComputeFrequencyResponse(
-      std::vector<std::array<float, kFftLengthBy2Plus1>>* H2) const {
-    H2->resize(size_partitions_);
-    ::ComputeFrequencyResponse(size_partitions_, H_, H2);
-  }
-
   // フィルタパーティションを巡回しながら正規化する。
   void Constrain() {
     std::array<float, kFftLength> h;
@@ -343,7 +332,7 @@ struct Subtractor {
                SubtractorOutput* output) {
     // レンダー信号のスペクトルパワーを算出。
     std::array<float, kFftLengthBy2Plus1> X2;
-    render_buffer.SpectralSum(filter_.SizePartitions(), &X2);
+    render_buffer.SpectralSum(filter_.size_partitions_, &X2);
 
     // キャプチャ信号（モノラル）の処理本体。
     {

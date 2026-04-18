@@ -208,8 +208,6 @@ struct SuppressionGain {
 struct SuppressionFilter {
   std::array<float, kFftLengthBy2> e_output_old_{};
 
-  SuppressionFilter() { e_output_old_.fill(0.f); }
-
   // 抑圧ゲインを周波数領域残差信号に乗算し、時間領域へ戻して出力する。
   void ApplyGain(const std::array<float, kFftLengthBy2Plus1>& suppression_gain,
                  const FftData& E_lowest_band,
