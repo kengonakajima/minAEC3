@@ -145,13 +145,7 @@ struct MatchedFilter {
   static inline constexpr float kSmoothing = 0.7f; // フィルタ更新時の平滑係数
   static inline constexpr float kMatchingFilterThreshold = 0.2f; // 適合度判断の閾値
   static inline constexpr float kExcitationLimit = 150.f; // 励起不足を防ぐ入力パワーの下限
-  // 個々の信号シフトに対応する遅延推定値を保持する構造体。
-  struct LagEstimate {
-    LagEstimate() = default;
-    LagEstimate(size_t lag) : lag(lag) {}
-    size_t lag = 0;
-  };
-  
+
   static constexpr size_t kNumFilters = 5; // 追跡する遅延候補数
   static constexpr size_t kSubBlockSize = kBlockSize / 4; // ダウンサンプル後サブブロック長
   static constexpr size_t kFilterLength = kMatchedFilterWindowSizeSubBlocks * kSubBlockSize; // 各フィルタ長

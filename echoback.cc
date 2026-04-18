@@ -106,7 +106,7 @@ static void process_available_blocks(State& s){
 
       // 1秒に1回、線形/非線形別のキャンセル量（ERLE近似）を出力（dB）。
       {
-        const EchoRemover::LastMetrics& metrics = s.aec.GetLastMetrics();
+        const EchoRemover::LastMetrics& metrics = s.aec.echo_remover_.last_metrics_;
         if (metrics.valid) {
           s.erle_in_energy_accum += static_cast<double>(metrics.y2);
           s.erle_linear_energy_accum += static_cast<double>(metrics.e2);
@@ -272,7 +272,7 @@ int main(int argc, char** argv){
   }
   // AECモード設定（passthrough時は意味なし）
   if (!s.passthrough) {
-    s.aec.SetProcessingModes(!no_linear, !no_nonlinear);
+    s.aec.echo_remover_.SetProcessingModes(!no_linear, !no_nonlinear);
   }
   const char* mode = s.passthrough ? "passthrough" :
                      (no_linear && !no_nonlinear) ? "nonlinear-only" :

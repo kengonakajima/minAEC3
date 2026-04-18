@@ -187,19 +187,6 @@ struct AdaptiveFirFilter {
   
 
 
-  // フィルタ出力を生成する。
-  // render_buffer: レンダーFFTバッファ, S: 出力先
-  void Filter(const RenderBuffer& render_buffer, FftData* S) const {
-    ::ApplyFilter(render_buffer, size_partitions_, H_, S);
-  }
-
-  // フィルタ係数を適応更新する。
-  // render_buffer: レンダーFFTバッファ, G: 更新ゲイン
-  void Adapt(const RenderBuffer& render_buffer, const FftData& G) {
-    ::AdaptPartitions(render_buffer, G, size_partitions_, &H_);
-    Constrain();
-  }
-
   // 既知のエコーパス変化が発生したときにフィルタ係数を初期化する。
   void HandleEchoPathChange() {
     for (size_t p = 0; p < H_.size(); ++p) {
@@ -369,7 +356,7 @@ struct Subtractor {
       FftData& G = S; // update_gain_.Compute が上書きするゲイン格納先として再利用
 
       // 線形フィルタの出力を形成。
-      filter_.Filter(render_buffer, &S);
+      ApplyFilter(render_buffer, filter_.size_partitions_, filter_.H_, &S);
       PredictionError(S, y, &e, &out.s);
 
       // 減算器出力の信号パワーを計算。
@@ -385,10 +372,12 @@ struct Subtractor {
       std::array<float, kFftLengthBy2Plus1> erl; // Echo Return Loss（周波数応答）
       ComputeErl(frequency_response_, erl);
       update_gain_.Compute(X2, out, erl,
-                           filter_.SizePartitions(),
+                           filter_.size_partitions_,
                            &G);
-      filter_.Adapt(render_buffer, G);
-      filter_.ComputeFrequencyResponse(&frequency_response_);
+      AdaptPartitions(render_buffer, G, filter_.size_partitions_, &filter_.H_);
+      filter_.Constrain();
+      frequency_response_.resize(filter_.size_partitions_);
+      ComputeFrequencyResponse(filter_.size_partitions_, filter_.H_, &frequency_response_);
     }
   }
 

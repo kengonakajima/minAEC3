@@ -33,9 +33,6 @@ struct EchoRemover {
     enable_nonlinear_suppressor_ = enable_nonlinear_suppressor;
   }
 
-  const LastMetrics& last_metrics() const { return last_metrics_; }
-  
-
   // キャプチャ信号1ブロックからエコー成分を除去する。
   // echo_path_variability: 遅延変化情報, render_buffer: レンダーバッファ, capture: キャプチャブロック
   void ProcessCapture(
@@ -197,16 +194,6 @@ struct BlockProcessor {
   // Buffers a 64-sample render block (directly supplied by the caller).
   void BufferRender(const Block& render_block) {
     render_buffer_.Insert(render_block);
-  }
-
-  // 線形/非線形の有効・無効を設定（EchoRemoverへ委譲）
-  void SetProcessingModes(bool enable_linear_filter,
-                          bool enable_nonlinear_suppressor) {
-    echo_remover_.SetProcessingModes(enable_linear_filter, enable_nonlinear_suppressor);
-  }
-
-  const EchoRemover::LastMetrics& GetLastMetrics() const {
-    return echo_remover_.last_metrics();
   }
 
   RenderDelayBuffer render_buffer_;

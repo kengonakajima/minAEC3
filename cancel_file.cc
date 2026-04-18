@@ -42,7 +42,7 @@ int main(int argc, char** argv){
   if (!read_wav_pcm16(argv[1], &x) || !read_wav_pcm16(argv[2], &y)){ std::fprintf(stderr, "Failed to read wavs\n"); return 1; }
   if (x.sr!=16000 || y.sr!=16000 || x.ch!=1 || y.ch!=1){ std::fprintf(stderr, "Expected 16k mono wavs\n"); }
   size_t N = std::min(x.samples.size(), y.samples.size()) / kBlockSize;
-  BlockProcessor aec; aec.SetProcessingModes(enable_linear, enable_nonlinear);
+  BlockProcessor aec; aec.echo_remover_.SetProcessingModes(enable_linear, enable_nonlinear);
   Block render_block;
   Block capture_block;
   std::vector<int16_t> processed;
