@@ -16,8 +16,6 @@ struct EchoRemover {
       float erle_avg=0.f;
       bool linear_usable=false;
       float output_e2=0.f;
-      bool linear_enabled=false;
-      bool nonlinear_enabled=false;
       bool valid=false;
   } last_metrics_;
 
@@ -58,8 +56,6 @@ struct EchoRemover {
     std::span<float, kBlockSize> capture_view = y->View();
     std::span<const float> capture_view_const(capture_view.data(), capture_view.size());
 
-    last_metrics_.linear_enabled = enable_linear_filter_;
-    last_metrics_.nonlinear_enabled = enable_nonlinear_suppressor_;
     last_metrics_.valid = false;
 
     if (echo_path_variability.DelayChanged()) {
@@ -164,8 +160,6 @@ struct EchoRemover {
       output_energy += sample * sample;
     }
     last_metrics_.output_e2 = output_energy;
-    last_metrics_.linear_enabled = enable_linear_filter_;
-    last_metrics_.nonlinear_enabled = enable_nonlinear_suppressor_;
     last_metrics_.valid = true;
   }
   
