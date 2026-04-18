@@ -3,18 +3,19 @@ struct SuppressionGain {
   std::array<float, kFftLengthBy2Plus1> last_gain_; // 前回適用したゲイン
   std::array<float, kFftLengthBy2Plus1> last_nearend_; // 前回の近端スペクトル
   std::array<float, kFftLengthBy2Plus1> last_echo_; // 前回の残留エコースペクトル
-  
-  MovingAverage nearend_smoother_ {kFftLengthBy2Plus1, 4}; // 近端スペクトルを平滑化する移動平均
 
-    
+  // 近端スペクトルを直近4ブロックで平均するための履歴(過去3ブロック分)
+  std::array<std::array<float, kFftLengthBy2Plus1>, 3> nearend_history_{};
+  size_t nearend_history_index_ = 0;
+
+
   // 固定パラメータ（全インスタンス共通）
   inline static constexpr float kMaxIncFactor = 2.0f; // ゲインの増加率上限
   inline static constexpr float kMaxDecFactorLf = 0.25f; // 低域でのゲイン減少率上限
-    
+
   SuppressionGain()
       : last_nearend_(),
-        last_echo_(),
-        nearend_smoother_{kFftLengthBy2Plus1, 4} {
+        last_echo_() {
     last_gain_.fill(1.f);
   }
 
@@ -74,7 +75,17 @@ struct SuppressionGain {
     GetMaxGain(max_gain);
     std::array<float, kFftLengthBy2Plus1> G;
     std::array<float, kFftLengthBy2Plus1> nearend;
-    nearend_smoother_.Average(suppressor_input, nearend);
+    // 近端スペクトルを直近4ブロック(現在+履歴3)で平均する
+    for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
+      float sum = suppressor_input[k];
+      for (const std::array<float, kFftLengthBy2Plus1>& h : nearend_history_) {
+        sum += h[k];
+      }
+      nearend[k] = sum * 0.25f;
+    }
+    std::copy(suppressor_input.begin(), suppressor_input.end(),
+              nearend_history_[nearend_history_index_].begin());
+    nearend_history_index_ = (nearend_history_index_ + 1) % nearend_history_.size();
     std::array<float, kFftLengthBy2Plus1> min_gain;
     GetMinGain(residual_echo, last_nearend_, last_echo_, min_gain);
     GainToNoAudibleEcho(nearend, residual_echo, &G);

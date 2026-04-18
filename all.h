@@ -41,7 +41,6 @@
 #include "adaptive_fir_filter.h"
 #include "filter_update_gain.h"
 #include "subtractor.h"
-#include "moving_average.h"
 #include "suppression_filter.h"
 #include "suppression_gain.h"
 #include "residual_echo_estimator.h"

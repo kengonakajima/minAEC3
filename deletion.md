@@ -2,6 +2,15 @@
 
 教育目的で、音声処理の本質に関係ない部分を削る計画。安全性・スケーラビリティ・将来拡張性は無視してよい。
 
+## 実施結果 (2026-04-18 完走)
+
+- step 1 ✅ `SubtractorOutputAnalyzer` 削除 (46fff92)
+- step 2 ✅ `FilteringQualityAnalyzer` を単一カウンタに簡素化 (7b354cd) — 完全削除は echoback で起動直後ハウリングが出たため断念。詳細は deletion_memo.md
+- step 3 ✅ 聴覚マスキング系削除 (a8a45a4)
+- step 4 ❌ `GetMinGain`/`GetMaxGain` 削除は試したが revert。echoback でエコーが 2 回程度聞こえるようになった。詳細は deletion_memo.md (b869bcf)
+- step 5 ✅ `ResidualEchoEstimator` ノイズフロア推定削除 (37c27a5)
+- step 6 ✅ `FilterUpdateGain` のウォームアップのうち `poor_excitation_counter_` だけ削除 (9e1ce00) — `call_counter_` は PFDAF 履歴満タン待ちとして残した(削るとハウリング発散)
+
 ## 公開 API(echoback.cc / cancel_file.cc から呼ばれているもの)
 
 以下は壊してはいけない:
