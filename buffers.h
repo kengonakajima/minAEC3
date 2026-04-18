@@ -6,15 +6,9 @@ struct BlockBuffer {
   int read = 0; // 次に読み出す位置
     
   BlockBuffer(size_t size) : size(static_cast<int>(size)), buffer(size, Block()) {}
-  int IncIndex(int index) const { return ::IncIndex(index, size); }
-  int DecIndex(int index) const { return ::DecIndex(index, size); }
   int OffsetIndex(int index, int offset) const { return ::OffsetIndex(index, offset, size); }
-  void UpdateWriteIndex(int offset) { write = OffsetIndex(write, offset); }
-  void IncWriteIndex() { write = IncIndex(write); }
-  void DecWriteIndex() { write = DecIndex(write); }
-  void UpdateReadIndex(int offset) { read = OffsetIndex(read, offset); }
-  void IncReadIndex() { read = IncIndex(read); }
-  void DecReadIndex() { read = DecIndex(read); }
+  void IncWriteIndex() { write = ::IncIndex(write, size); }
+  void IncReadIndex() { read = ::IncIndex(read, size); }
 };
 // 128ポイント実数FFTで生成された複素数データを保持する構造体。kFftLengthBy2Plus1は65。128ポイントの末尾63要素は対称なので不要
 struct FftData {
@@ -76,15 +70,9 @@ struct FftBuffer {
     for (FftData& fft_data : buffer) fft_data.Clear();
   }
 
-  int IncIndex(int index) const { return ::IncIndex(index, size); }
-  int DecIndex(int index) const { return ::DecIndex(index, size); }
   int OffsetIndex(int index, int offset) const { return ::OffsetIndex(index, offset, size); }
-  void UpdateWriteIndex(int offset) { write = OffsetIndex(write, offset); }
-  void IncWriteIndex() { write = IncIndex(write); }
-  void DecWriteIndex() { write = DecIndex(write); }
-  void UpdateReadIndex(int offset) { read = OffsetIndex(read, offset); }
-  void IncReadIndex() { read = IncIndex(read); }
-  void DecReadIndex() { read = DecIndex(read); }
+  void DecWriteIndex() { write = (write > 0 ? write - 1 : size - 1); }
+  void DecReadIndex() { read = (read > 0 ? read - 1 : size - 1); }
 };
 
  
@@ -103,14 +91,9 @@ struct SpectrumBuffer {
   }
 
   int IncIndex(int index) const { return ::IncIndex(index, size); }
-  int DecIndex(int index) const { return ::DecIndex(index, size); }
   int OffsetIndex(int index, int offset) const { return ::OffsetIndex(index, offset, size); }
-  void UpdateWriteIndex(int offset) { write = OffsetIndex(write, offset); }
-  void IncWriteIndex() { write = IncIndex(write); }
-  void DecWriteIndex() { write = DecIndex(write); }
-  void UpdateReadIndex(int offset) { read = OffsetIndex(read, offset); }
-  void IncReadIndex() { read = IncIndex(read); }
-  void DecReadIndex() { read = DecIndex(read); }
+  void DecWriteIndex() { write = (write > 0 ? write - 1 : size - 1); }
+  void DecReadIndex() { read = (read > 0 ? read - 1 : size - 1); }
 };
 
 // ダウンサンプリング済みレンダーデータを保持するリングバッファ。
@@ -126,15 +109,9 @@ struct DownsampledRenderBuffer {
     std::fill(buffer.begin(), buffer.end(), 0.f);
   }
 
-  int IncIndex(int index) const { return ::IncIndex(index, size); }
-  int DecIndex(int index) const { return ::DecIndex(index, size); }
   int OffsetIndex(int index, int offset) const { return ::OffsetIndex(index, offset, size); }
   void UpdateWriteIndex(int offset) { write = OffsetIndex(write, offset); }
-  void IncWriteIndex() { write = IncIndex(write); }
-  void DecWriteIndex() { write = DecIndex(write); }
   void UpdateReadIndex(int offset) { read = OffsetIndex(read, offset); }
-  void IncReadIndex() { read = IncIndex(read); }
-  void DecReadIndex() { read = DecIndex(read); }
 };
 
 
