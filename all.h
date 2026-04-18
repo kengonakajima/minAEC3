@@ -9,7 +9,6 @@
 #include <string>
 #include <stddef.h>
 #include <array>
-#include <numeric>
 #include <vector>
 #include <algorithm>
 #include <span>

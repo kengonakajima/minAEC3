@@ -337,11 +337,9 @@ struct MatchedFilterLagAggregator {
 
 
   // 集約器の状態をリセットする。
-  void Reset(bool hard_reset) {
+  void Reset() {
     highest_peak_aggregator_.Reset();
-    if (hard_reset) {
-      significant_candidate_found_ = false;
-    }
+    significant_candidate_found_ = false;
   }
 
   // 遅延推定値を集約し、確信度が十分ならサンプル単位の遅延を返す（なければ -1）。
@@ -415,7 +413,7 @@ struct EchoPathDelayEstimator {
   }
   // 内部状態をまとめてリセットする補助関数。
   void ResetInternal() {
-    matched_filter_lag_aggregator_.Reset(true);
+    matched_filter_lag_aggregator_.Reset();
     matched_filter_.Reset();
     old_aggregated_lag_ = -1;
     consistent_estimate_counter_ = 0;

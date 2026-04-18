@@ -1,7 +1,6 @@
 // 単一キャプチャチャネルのエコー減算器が返す各種値を保持する。
 struct SubtractorOutput {
 
-  std::array<float, kBlockSize> s; // 線形フィルタが再現したエコー（推定スピーカ信号）
   std::array<float, kBlockSize> e; // キャプチャ信号と推定エコーとの差分（残差信号）
   FftData E; // 残差信号eの周波数領域表現
   std::array<float, kFftLengthBy2Plus1> E2; // 残差信号Eのパワースペクトル
@@ -30,18 +29,16 @@ struct ErleEstimator {
   size_t blocks_since_reset_ = 0; // リセット後に経過したブロック数
     
   ErleEstimator(size_t startup_phase_length_blocks) : startup_phase_length_blocks_(startup_phase_length_blocks) {
-    Reset(true);
+    Reset();
   }
 
   // 現在のERLE推定値を返す。
   const std::array<float, kFftLengthBy2Plus1>& Erle() const { return erle_; }
 
   // 全帯域および各サブバンドのERLE推定値をリセットする。
-  void Reset(bool delay_change) {
+  void Reset() {
     erle_.fill(1.f);
-    if (delay_change) {
-      blocks_since_reset_ = 0;
-    }
+    blocks_since_reset_ = 0;
   }
 
   // ERLE推定値を最新のスペクトルに基づいて更新する。
@@ -80,7 +77,7 @@ struct AecState {
   // エコーパス変化時に必要なリセット処理を行う。
   void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
     if (echo_path_variability != EchoPathVariability::kNone) {
-      erle_estimator_.Reset(true);
+      erle_estimator_.Reset();
       blocks_since_reset_ = 0;
     }
   }
@@ -284,22 +281,15 @@ struct FilterUpdateGain {
 };
 
 // FFT 復元から予測誤差を計算するヘルパー。
-// S: フィルタ出力の周波数表現, y: キャプチャ信号,
-// e: 残差信号の書き込み先, s: フィルタ出力（推定エコー）の書き込み先
+// S: フィルタ出力の周波数表現, y: キャプチャ信号, e: 残差信号の書き込み先
 inline void PredictionError(const FftData& S,
                             std::span<const float> y,
-                            std::array<float, kBlockSize>* e,
-                            std::array<float, kBlockSize>* s) {
+                            std::array<float, kBlockSize>* e) {
   std::array<float, kFftLength> tmp;
   Ifft(S, &tmp);
   const float kScale = 1.0f / static_cast<float>(kFftLengthBy2);
   std::transform(y.begin(), y.end(), tmp.begin() + kFftLengthBy2, e->begin(),
                  [&](float a, float b) { return a - b * kScale; });
-  if (s) {
-    for (size_t k = 0; k < s->size(); ++k) {
-      (*s)[k] = kScale * tmp[k + kFftLengthBy2];
-    }
-  }
 }
  
 
@@ -343,7 +333,7 @@ struct Subtractor {
 
       // 線形フィルタの出力を形成。
       ApplyFilter(render_buffer, filter_.size_partitions_, filter_.H_, &S);
-      PredictionError(S, y, &e, &out.s);
+      PredictionError(S, y, &e);
 
       // 減算器出力の信号パワーを計算。
       out.ComputeMetrics(y);
