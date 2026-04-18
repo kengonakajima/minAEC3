@@ -74,7 +74,12 @@ struct RenderDelayBuffer {
       return false;
     }
     delay_ = static_cast<int>(delay);
-    int total_delay = MapDelayToTotalDelay(delay_);
+    // ダウンサンプル済みバッファの現在レイテンシ(ブロック数)を算出し、外部推定遅延に加算する。
+    const int latency_samples =
+        (low_rate_.buffer.size() + low_rate_.read - low_rate_.write) %
+        low_rate_.buffer.size();
+    const int latency_blocks = latency_samples / sub_block_size_;
+    int total_delay = latency_blocks + delay_;
     total_delay = static_cast<int>(std::min(MaxDelay(), static_cast<size_t>(std::max(total_delay, 0))));
     ApplyTotalDelay(total_delay);
     return true;
@@ -89,18 +94,6 @@ struct RenderDelayBuffer {
 
   // ダウンサンプリング済みレンダーバッファを取得する。
   const DownsampledRenderBuffer& GetDownsampledRenderBuffer() const { return low_rate_; }
-
-  int BufferLatency() const {
-    const DownsampledRenderBuffer& l = low_rate_;
-    int latency_samples = (l.buffer.size() + l.read - l.write) % l.buffer.size();
-    int latency_blocks = latency_samples / sub_block_size_;
-    return latency_blocks;
-  }
-
-  int MapDelayToTotalDelay(int external_delay_blocks) const {
-    const int latency_blocks = BufferLatency();
-    return latency_blocks + external_delay_blocks;
-  }
   void ApplyTotalDelay(int delay) {
     blocks_.read = blocks_.OffsetIndex(blocks_.write, -delay);
     spectra_.read = spectra_.OffsetIndex(spectra_.write, delay);

@@ -77,9 +77,6 @@ struct AecState {
     return erle_estimator_.Erle();
   }
 
-  // 線形フィルタに基づく遅延推定値を返す（簡略化により常に0）。
-  int MinDirectPathFilterDelay() const { return 0; }
-
   // エコーパス変化時に必要なリセット処理を行う。
   void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
     if (echo_path_variability != EchoPathVariability::kNone) {

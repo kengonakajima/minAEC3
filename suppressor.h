@@ -6,26 +6,16 @@ struct ResidualEchoEstimator {
 
   ResidualEchoEstimator() = default;
 
-  static void GetRenderIndexesToAnalyze(const SpectrumBuffer& spectrum_buffer,
-                                        int filter_delay_blocks,
-                                        int* idx_start,
-                                        int* idx_stop) {
+  static void ComputeEchoGeneratingPower(const SpectrumBuffer& spectrum_buffer,
+                                         int filter_delay_blocks,
+                                         std::span<float, kFftLengthBy2Plus1> X2) {
+    // 遅延推定位置の前後 ±1 ブロックをまとめて解析窓とする。
     const size_t window_start =
         std::max(0, filter_delay_blocks - static_cast<int>(kRenderPreWindowSize));
     const size_t window_end =
         filter_delay_blocks + static_cast<int>(kRenderPostWindowSize);
-    *idx_start = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
-    *idx_stop =
-        spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
-  }
-
-  static void ComputeEchoGeneratingPower(const SpectrumBuffer& spectrum_buffer,
-                                         int filter_delay_blocks,
-                                         std::span<float, kFftLengthBy2Plus1> X2) {
-    int idx_stop;
-    int idx_start;
-    GetRenderIndexesToAnalyze(spectrum_buffer, filter_delay_blocks,
-                              &idx_start, &idx_stop);
+    const int idx_start = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
+    const int idx_stop = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
     std::fill(X2.begin(), X2.end(), 0.f);
     for (int index = idx_start; index != idx_stop; index = spectrum_buffer.IncIndex(index)) {
       for (size_t bin = 0; bin < kFftLengthBy2Plus1; ++bin) {
@@ -50,8 +40,8 @@ struct ResidualEchoEstimator {
     } else {
       // 非線形モード: R2 ≈ 遠端スペクトル(エコー生成パワー)
       std::array<float, kFftLengthBy2Plus1> X2;
-      ComputeEchoGeneratingPower(render_buffer.GetSpectrumBuffer(),
-                                  aec_state.MinDirectPathFilterDelay(), X2);
+      // 最小実装では線形フィルタ由来の遅延は 0 固定とする。
+      ComputeEchoGeneratingPower(render_buffer.GetSpectrumBuffer(), 0, X2);
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
         (*R2)[k] = X2[k];
       }
