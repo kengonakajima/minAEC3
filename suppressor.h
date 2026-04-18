@@ -6,10 +6,8 @@ struct ResidualEchoEstimator {
                                          int filter_delay_blocks,
                                          std::span<float, kFftLengthBy2Plus1> X2) {
     // 遅延推定位置の前後 ±1 ブロックをまとめて解析窓とする。
-    const size_t window_start =
-        std::max(0, filter_delay_blocks - 1);
-    const size_t window_end =
-        filter_delay_blocks + 1;
+    const size_t window_start = std::max(0, filter_delay_blocks - 1);
+    const size_t window_end = filter_delay_blocks + 1;
     const int idx_start = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
     const int idx_stop = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
     std::fill(X2.begin(), X2.end(), 0.f);
@@ -58,13 +56,9 @@ struct SuppressionGain {
   std::array<std::array<float, kFftLengthBy2Plus1>, 3> nearend_history_{};
   size_t nearend_history_index_ = 0;
 
-
-  SuppressionGain()
-      : last_nearend_(),
-        last_echo_() {
+  SuppressionGain() : last_nearend_(), last_echo_() {
     last_gain_.fill(1.f);
   }
-
 
   // 近端・エコー・残留エコーのスペクトルからゲインを算出する。
   void GetGain(
