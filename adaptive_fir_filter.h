@@ -71,13 +71,12 @@ inline void ComputeErl(
 
 // 周波数領域で動作する適応フィルタを提供する。
 struct AdaptiveFirFilter {
-  const Aec3Fft fft_; // フィルタ更新に用いるFFTヘルパー
   const size_t size_partitions_; // ブロック単位のパーティション数
   std::vector<FftData> H_; // 各パーティションの周波数領域係数
   size_t partition_to_constrain_ = 0; // 正規化対象のパーティションインデックス
-    
+
   AdaptiveFirFilter(size_t size_partitions)
-      : fft_(), size_partitions_(size_partitions), H_(size_partitions) {
+      : size_partitions_(size_partitions), H_(size_partitions) {
     for (size_t p = 0; p < H_.size(); ++p) {
       H_[p].Clear();
     }
@@ -121,12 +120,12 @@ struct AdaptiveFirFilter {
   void Constrain() {
     std::array<float, kFftLength> h;
     {
-      fft_.Ifft(H_[partition_to_constrain_], &h);
+      Ifft(H_[partition_to_constrain_], &h);
       static const float kScale = 1.0f / static_cast<float>(kFftLengthBy2);
       std::for_each(h.begin(), h.begin() + kFftLengthBy2,
                     [](float& a) { a *= kScale; });
       std::fill(h.begin() + kFftLengthBy2, h.end(), 0.f);
-      fft_.Fft(&h, &H_[partition_to_constrain_]);
+      Fft(&h, &H_[partition_to_constrain_]);
     }
     partition_to_constrain_ =
         partition_to_constrain_ < (size_partitions_ - 1)

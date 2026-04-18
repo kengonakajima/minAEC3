@@ -14,7 +14,6 @@ struct RenderDelayBuffer {
   int delay_; // 現在適用中の遅延（ブロック単位）
   RenderBuffer echo_remover_buffer_; // EchoRemoverへ渡すバッファビュー
   DownsampledRenderBuffer low_rate_; // ダウンサンプリング済みレンダーデータ
-  const Aec3Fft fft_; // FFT処理ヘルパー
   std::vector<float> render_ds_; // ダウンサンプル用ワーク領域
   const int buffer_headroom_; // バッファの安全余裕ブロック数
     
@@ -29,7 +28,6 @@ struct RenderDelayBuffer {
         echo_remover_buffer_(&blocks_, &spectra_, &ffts_),
         low_rate_(GetDownSampledBufferSize(kDownSamplingFactor,
                                            /*num_filters=*/5)),
-        fft_(),
         render_ds_(sub_block_size_, 0.f),
         buffer_headroom_(13) {
     Reset();
@@ -119,9 +117,9 @@ struct RenderDelayBuffer {
     std::copy(block.begin(), block.end(), b.buffer[b.write].begin());
     DecimateBy4(b.buffer[b.write], ds);
     std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
-    fft_.PaddedFft(b.buffer[b.write],
-                   b.buffer[previous_write],
-                   &f.buffer[f.write]);
+    PaddedFft(b.buffer[b.write],
+              b.buffer[previous_write],
+              &f.buffer[f.write]);
     f.buffer[f.write].Spectrum(s.buffer[s.write]);
   }
   void IncrementWriteIndices() {

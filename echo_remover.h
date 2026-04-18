@@ -1,6 +1,5 @@
 // キャプチャ信号からエコー成分を除去する。
 struct EchoRemover {
-  const Aec3Fft fft_; // FFT処理を担うヘルパー
   Subtractor subtractor_; // 線形エコー推定・適応フィルタ
   SuppressionGain suppression_gain_; // 抑圧ゲイン計算器
   SuppressionFilter suppression_filter_; // 抑圧ゲイン適用フィルタ
@@ -21,8 +20,7 @@ struct EchoRemover {
 
     
   EchoRemover()
-      : fft_(),
-        subtractor_(),
+      : subtractor_(),
         suppression_gain_(),
         suppression_filter_(),
         residual_echo_estimator_(),
@@ -112,13 +110,13 @@ struct EchoRemover {
     // 非線形用の共通前処理
     {
       std::span<const float> previous_block(y_old_.data(), y_old_.size());
-      fft_.PaddedFft(capture_view_const, previous_block, &Y);
+      PaddedFft(capture_view_const, previous_block, &Y);
       std::copy(capture_view_const.begin(), capture_view_const.end(), y_old_.begin());
     }
     {
       std::span<const float> previous_error_block(e_old_.data(), e_old_.size());
       std::span<const float> error_view(e.data(), e.size());
-      fft_.PaddedFft(error_view, previous_error_block, &E);
+      PaddedFft(error_view, previous_error_block, &E);
       std::copy(error_view.begin(), error_view.end(), e_old_.begin());
     }
     for (size_t k = 0; k < E.re.size(); ++k) {

@@ -1,9 +1,8 @@
 // 周波数領域ゲインを適用して残差信号を抑圧するフィルタ。
 struct SuppressionFilter {
-  const Aec3Fft fft_;
   std::array<float, kFftLengthBy2> e_output_old_{};
-    
-  SuppressionFilter() : fft_() { e_output_old_.fill(0.f); }
+
+  SuppressionFilter() { e_output_old_.fill(0.f); }
 
   // 抑圧ゲインを周波数領域残差信号に乗算し、時間領域へ戻して出力する。
   void ApplyGain(const std::array<float, kFftLengthBy2Plus1>& suppression_gain,
@@ -17,7 +16,7 @@ struct SuppressionFilter {
     }
     std::array<float, kFftLength> e_extended;
     const float kIfftNormalization = 2.f / static_cast<float>(kFftLength);
-    fft_.Ifft(E, &e_extended);
+    Ifft(E, &e_extended);
     std::span<float, kBlockSize> e0(*e);
     float* e0_old = e_output_old_.data();
     for (size_t i = 0; i < kFftLengthBy2; ++i) {
