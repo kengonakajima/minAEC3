@@ -83,11 +83,6 @@ inline int OffsetIndex(int index, int offset, int size) {
 }
 
 
-// エコーパスの変化を通知する
-enum class EchoPathVariability {
-  kNone,
-  kNewDetectedDelay
-};
 // OLA分析/合成で用いる128ポイントの平方根ハニング窓係数。
 inline constexpr std::array<float, kFftLength> kSqrtHanning128 = {
     0.00000000000000f, 0.02454122852291f, 0.04906767432742f, 0.07356456359967f,

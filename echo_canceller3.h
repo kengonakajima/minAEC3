@@ -34,9 +34,10 @@ struct EchoRemover {
   }
 
   // キャプチャ信号1ブロックからエコー成分を除去する。
-  // echo_path_variability: 遅延変化情報, render_buffer: レンダーバッファ, capture: キャプチャブロック
+  // delay_changed: 直前のブロックで遅延アラインメントが更新されたか,
+  // render_buffer: レンダーバッファ, capture: キャプチャブロック
   void ProcessCapture(
-      EchoPathVariability echo_path_variability,
+      bool delay_changed,
       RenderBuffer* render_buffer,
       Block* capture) {
     Block* y = capture;
@@ -53,9 +54,9 @@ struct EchoRemover {
 
     last_metrics_.valid = false;
 
-    if (echo_path_variability != EchoPathVariability::kNone) {
-      subtractor_.HandleEchoPathChange(echo_path_variability);
-      aec_state_.HandleEchoPathChange(echo_path_variability);
+    if (delay_changed) {
+      subtractor_.HandleEchoPathChange();
+      aec_state_.HandleEchoPathChange();
     }
 
     // 何も使わない（両方無効）の場合は素通し
@@ -163,7 +164,7 @@ struct EchoRemover {
 // 1ブロック分のキャプチャ処理の流れ:
 //   1. レンダーバッファのキャプチャ側準備
 //   2. 遅延推定(サンプル→ブロック)
-//   3. バッファのアラインメント(推定遅延が変化したら echo_path_variability を通知)
+//   3. バッファのアラインメント(推定遅延が変化したら delay_changed=true)
 //   4. エコー除去本体
 inline void ProcessCaptureBlock(
     RenderDelayBuffer* render_buffer,
@@ -171,7 +172,6 @@ inline void ProcessCaptureBlock(
     EchoRemover* echo_remover,
     int* estimated_delay_blocks,  // 出力: 推定遅延(ブロック単位、未検出なら-1)
     Block* capture_block) {
-  EchoPathVariability echo_path_variability = EchoPathVariability::kNone;
   render_buffer->PrepareCaptureProcessing();
 
   int d_samples = delay_estimator->EstimateDelay(
@@ -179,15 +179,13 @@ inline void ProcessCaptureBlock(
   *estimated_delay_blocks =
       (d_samples >= 0) ? static_cast<int>(d_samples >> kBlockSizeLog2) : -1;
 
+  bool delay_changed = false;
   if (*estimated_delay_blocks >= 0) {
-    bool delay_change = render_buffer->AlignFromDelay(
+    delay_changed = render_buffer->AlignFromDelay(
         static_cast<size_t>(*estimated_delay_blocks));
-    if (delay_change) {
-      echo_path_variability = EchoPathVariability::kNewDetectedDelay;
-    }
   }
 
-  echo_remover->ProcessCapture(echo_path_variability,
+  echo_remover->ProcessCapture(delay_changed,
                                render_buffer->GetRenderBuffer(),
                                capture_block);
 }

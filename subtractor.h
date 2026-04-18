@@ -75,11 +75,9 @@ struct AecState {
   }
 
   // エコーパス変化時に必要なリセット処理を行う。
-  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
-    if (echo_path_variability != EchoPathVariability::kNone) {
-      erle_estimator_.Reset();
-      blocks_since_reset_ = 0;
-    }
+  void HandleEchoPathChange() {
+    erle_estimator_.Reset();
+    blocks_since_reset_ = 0;
   }
 
   // 最新の信号情報でAEC状態を更新する。
@@ -226,10 +224,8 @@ struct FilterUpdateGain {
 
 
   // 既知のエコーパス変化が発生した際のリセット処理。
-  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
-    if (echo_path_variability != EchoPathVariability::kNone) {
-      H_error_.fill(kHErrorInitial);
-    }
+  void HandleEchoPathChange() {
+    H_error_.fill(kHErrorInitial);
     call_counter_ = 0;
   }
 
@@ -357,11 +353,9 @@ struct Subtractor {
     }
   }
 
-  void HandleEchoPathChange(EchoPathVariability echo_path_variability) {
-    if (echo_path_variability != EchoPathVariability::kNone) {
-      filter_.HandleEchoPathChange();
-      update_gain_.HandleEchoPathChange(echo_path_variability);
-    }
+  void HandleEchoPathChange() {
+    filter_.HandleEchoPathChange();
+    update_gain_.HandleEchoPathChange();
   }
 };
 
