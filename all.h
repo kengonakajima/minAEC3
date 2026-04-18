@@ -37,7 +37,6 @@
 #include "echo_path_variability.h"
 #include "subtractor_output.h"
 #include "erle_estimator.h"
-#include "subtractor_output_analyzer.h"
 #include "aec_state.h"
 #include "adaptive_fir_filter.h"
 #include "filter_update_gain.h"

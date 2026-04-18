@@ -3,8 +3,7 @@
 struct AecState {
   AecState()
       : filter_quality_state_(),
-        erle_estimator_(2 * kNumBlocksPerSecond),
-        subtractor_output_analyzer_() {}
+        erle_estimator_(2 * kNumBlocksPerSecond) {}
   
 
   // エコー減算器の線形推定が残留エコー推定に利用できるかを返す。
@@ -23,7 +22,6 @@ struct AecState {
       erle_estimator_.Reset(true);
       filter_quality_state_.Reset();
     }
-    subtractor_output_analyzer_.HandleEchoPathChange();
   }
 
   // 最新の信号情報でAEC状態を更新する。
@@ -31,8 +29,11 @@ struct AecState {
               const std::array<float, kFftLengthBy2Plus1>& E2,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
               const SubtractorOutput& subtractor_output) {
-    bool any_filter_converged;
-    subtractor_output_analyzer_.Update(subtractor_output, &any_filter_converged);
+    // フィルタ収束判定: e2 が y2 の半分以下で、かつ y2 が十分大きい。
+    const float kConvergenceThreshold = 50 * 50 * static_cast<float>(kBlockSize);
+    const bool any_filter_converged =
+        subtractor_output.e2 < 0.5f * subtractor_output.y2 &&
+        subtractor_output.y2 > kConvergenceThreshold;
     const Block& aligned_render_block = render_buffer.GetBlock(0);
     const float render_energy = std::inner_product(
         aligned_render_block.begin(), aligned_render_block.end(),
@@ -81,5 +82,4 @@ struct AecState {
   } filter_quality_state_;
 
   ErleEstimator erle_estimator_;
-  SubtractorOutputAnalyzer subtractor_output_analyzer_;
 };
