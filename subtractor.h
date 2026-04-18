@@ -67,8 +67,8 @@ struct AecState {
 
   // エコー減算器の線形推定が残留エコー推定に利用できるかを返す。
   // 起動直後は線形フィルタが未収束なので非線形モードで動かし、
-  // kWarmupBlocks ブロック経過後に線形モードへ切り替える。
-  bool UsableLinearEstimate() const { return blocks_since_reset_ > kWarmupBlocks; }
+  // 100ブロック(約0.4秒)経過後に線形モードへ切り替える。
+  bool UsableLinearEstimate() const { return blocks_since_reset_ > 100; }
 
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
     return erle_estimator_.Erle();
@@ -87,8 +87,6 @@ struct AecState {
     ++blocks_since_reset_;
   }
 
-  // 起動/遅延リセット後、線形モードを有効化するまでの待機ブロック数 (約0.4秒)。
-  static constexpr size_t kWarmupBlocks = kNumBlocksPerSecond * 2 / 5;
   size_t blocks_since_reset_ = 0;
   ErleEstimator erle_estimator_;
 };
@@ -208,24 +206,18 @@ struct AdaptiveFirFilter {
 // 自己回帰型の線形フィルタ更新ゲインを計算する。
 struct FilterUpdateGain {
 
-  static constexpr float kLeakageConverged = 0.00005f; // 収束時に誤差推定へ加えるリーク係数
-  static constexpr float kLeakageDiverged = 0.05f; // 発散時に誤差推定へ加えるリーク係数
-  static constexpr float kErrorFloor = 0.001f; // 誤差推定H_error_の下限値
-  static constexpr float kErrorCeil = 2.f; // 誤差推定H_error_の上限値
-  static constexpr float kNoiseGate = 20075344.f; // レンダーパワーがこの値未満なら更新を抑制
-  static constexpr float kHErrorInitial = 10000.f; // 誤差推定の初期値
-  std::array<float, kFftLengthBy2Plus1> H_error_; // 各周波数ビンのフィルタ誤差推定値
+  std::array<float, kFftLengthBy2Plus1> H_error_; // 各周波数ビンのフィルタ誤差推定値(初期値10000)
   size_t call_counter_ = 0; // Computeを呼び出した累計回数(パーティション履歴が満タンになるまで更新を止める)
 
   FilterUpdateGain() {
-    H_error_.fill(kHErrorInitial);
+    H_error_.fill(10000.f);
   }
 
 
 
   // 既知のエコーパス変化が発生した際のリセット処理。
   void HandleEchoPathChange() {
-    H_error_.fill(kHErrorInitial);
+    H_error_.fill(10000.f);
     call_counter_ = 0;
   }
 
@@ -248,7 +240,8 @@ struct FilterUpdateGain {
     } else {
       std::array<float, kFftLengthBy2Plus1> mu;
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-        if (X2[k] >= kNoiseGate) {
+        // レンダーパワーが小さすぎる(<20075344)と更新を止める
+        if (X2[k] >= 20075344.f) {
           mu[k] = H_error_[k] /
                   (0.5f * H_error_[k] * X2[k] + size_partitions * E2[k]);
         } else {
@@ -265,13 +258,14 @@ struct FilterUpdateGain {
     }
     const bool filter_ok = (subtractor_output.e2 <= 0.5f * subtractor_output.y2);
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
+      // 収束時はリーク係数0.00005f、発散時は0.05fでH_errorにERLを加算し、[0.001f, 2.f]でクランプ
       if (filter_ok) {
-        H_error_[k] += kLeakageConverged * erl[k];
+        H_error_[k] += 0.00005f * erl[k];
       } else {
-        H_error_[k] += kLeakageDiverged * erl[k];
+        H_error_[k] += 0.05f * erl[k];
       }
-      H_error_[k] = std::max(H_error_[k], kErrorFloor);
-      H_error_[k] = std::min(H_error_[k], kErrorCeil);
+      H_error_[k] = std::max(H_error_[k], 0.001f);
+      H_error_[k] = std::min(H_error_[k], 2.f);
     }
   }  
 };

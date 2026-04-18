@@ -1,9 +1,5 @@
 
 struct ResidualEchoEstimator {
-  inline static constexpr size_t kRenderPreWindowSize = 1; // 遅延推定前側で参照するスペクトル数
-  inline static constexpr size_t kRenderPostWindowSize = 1; // 遅延推定後側で参照するスペクトル数
-
-
   ResidualEchoEstimator() = default;
 
   static void ComputeEchoGeneratingPower(const SpectrumBuffer& spectrum_buffer,
@@ -11,9 +7,9 @@ struct ResidualEchoEstimator {
                                          std::span<float, kFftLengthBy2Plus1> X2) {
     // 遅延推定位置の前後 ±1 ブロックをまとめて解析窓とする。
     const size_t window_start =
-        std::max(0, filter_delay_blocks - static_cast<int>(kRenderPreWindowSize));
+        std::max(0, filter_delay_blocks - 1);
     const size_t window_end =
-        filter_delay_blocks + static_cast<int>(kRenderPostWindowSize);
+        filter_delay_blocks + 1;
     const int idx_start = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_start);
     const int idx_stop = spectrum_buffer.OffsetIndex(spectrum_buffer.read, window_end + 1);
     std::fill(X2.begin(), X2.end(), 0.f);
@@ -63,10 +59,6 @@ struct SuppressionGain {
   size_t nearend_history_index_ = 0;
 
 
-  // 固定パラメータ（全インスタンス共通）
-  inline static constexpr float kMaxIncFactor = 2.0f; // ゲインの増加率上限
-  inline static constexpr float kMaxDecFactorLf = 0.25f; // 低域でのゲイン減少率上限
-
   SuppressionGain()
       : last_nearend_(),
         last_echo_() {
@@ -85,29 +77,24 @@ struct SuppressionGain {
   }
 
   // 可聴エコーが残らないようにゲインを制限する。
+  // バンド0..5は低域パラメータ、バンド8以上は高域パラメータを使用し、6..7は線形補間。
+  // Lf: enr_transparent=0.3f, enr_suppress=0.4f, emr_transparent=0.3f
+  // Hf: enr_transparent=0.07f, enr_suppress=0.1f, emr_transparent=0.3f
   void GainToNoAudibleEcho(const std::array<float, kFftLengthBy2Plus1>& nearend,
                            const std::array<float, kFftLengthBy2Plus1>& echo,
                            std::array<float, kFftLengthBy2Plus1>* gain) const {
-    constexpr int kLastLfBand = 5;
-    constexpr int kFirstHfBand = 8;
-    constexpr float kLf_enr_transparent = 0.3f;
-    constexpr float kLf_enr_suppress = 0.4f;
-    constexpr float kLf_emr_transparent = 0.3f;
-    constexpr float kHf_enr_transparent = 0.07f;
-    constexpr float kHf_enr_suppress = 0.1f;
-    constexpr float kHf_emr_transparent = 0.3f;
     for (size_t k = 0; k < gain->size(); ++k) {
       float a;
-      if (static_cast<int>(k) <= kLastLfBand) {
+      if (static_cast<int>(k) <= 5) {
         a = 0.f;
-      } else if (static_cast<int>(k) < kFirstHfBand) {
-        a = (static_cast<int>(k) - kLastLfBand) / static_cast<float>(kFirstHfBand - kLastLfBand);
+      } else if (static_cast<int>(k) < 8) {
+        a = (static_cast<int>(k) - 5) / static_cast<float>(8 - 5);
       } else {
         a = 1.f;
       }
-      const float enr_transparent = (1 - a) * kLf_enr_transparent + a * kHf_enr_transparent;
-      const float enr_suppress = (1 - a) * kLf_enr_suppress + a * kHf_enr_suppress;
-      const float emr_transparent = (1 - a) * kLf_emr_transparent + a * kHf_emr_transparent;
+      const float enr_transparent = (1 - a) * 0.3f + a * 0.07f;
+      const float enr_suppress = (1 - a) * 0.4f + a * 0.1f;
+      const float emr_transparent = (1 - a) * 0.3f + a * 0.3f;
       const float enr = echo[k] / (nearend[k] + 1.f);
       const float emr = echo[k] / (1.f);
       float g = 1.0f;
@@ -170,7 +157,8 @@ struct SuppressionGain {
                         : 1.f;
       min_gain[k] = std::min(min_gain[k], 1.f);
     }
-    const float dec = kMaxDecFactorLf;
+    // 低域でのゲイン減少率上限0.25f
+    const float dec = 0.25f;
     const int kLastLfSmoothingBand = 5;
     const int kLastPermanentLfSmoothingBand = 0;
     for (int k = 0; k <= kLastLfSmoothingBand; ++k) {
@@ -183,7 +171,8 @@ struct SuppressionGain {
   }
 
   void GetMaxGain(std::span<float> max_gain) const {
-    const float inc = kMaxIncFactor;
+    // ゲインの増加率上限2.0f
+    const float inc = 2.0f;
     const float floor = 0.00001f;
     for (size_t k = 0; k < max_gain.size(); ++k) {
       max_gain[k] = std::min(std::max(last_gain_[k] * inc, floor), 1.f);

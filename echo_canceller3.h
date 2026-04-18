@@ -82,13 +82,12 @@ struct EchoRemover {
       if (!enable_nonlinear_suppressor_) {
         // 線形のみ: e をそのまま時間領域出力にする
         std::copy(e.begin(), e.end(), capture_view.begin());
-        constexpr float kEps = 1e-9f;
         last_metrics_.y2 = subtractor_output.y2;
         last_metrics_.e2 = subtractor_output.e2;
         last_metrics_.output_e2 = subtractor_output.e2;
         const float ratio =
-            (subtractor_output.e2 + kEps) > 0.f
-                ? subtractor_output.y2 / (subtractor_output.e2 + kEps)
+            (subtractor_output.e2 + 1e-9f) > 0.f
+                ? subtractor_output.y2 / (subtractor_output.e2 + 1e-9f)
                 : 1.f;
         last_metrics_.erle_avg = ratio;
         last_metrics_.linear_usable = aec_state_.UsableLinearEstimate();

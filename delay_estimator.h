@@ -135,10 +135,6 @@ struct RenderDelayBuffer {
 
 // 複数の信号シフトに対する相互相関を逐次更新し、遅延候補を推定する。
 struct MatchedFilter {
-  static inline constexpr float kSmoothing = 0.7f; // フィルタ更新時の平滑係数
-  static inline constexpr float kMatchingFilterThreshold = 0.2f; // 適合度判断の閾値
-  static inline constexpr float kExcitationLimit = 150.f; // 励起不足を防ぐ入力パワーの下限
-
   static constexpr size_t kNumFilters = 5; // 追跡する遅延候補数
   static constexpr size_t kSubBlockSize = kBlockSize / 4; // ダウンサンプル後サブブロック長
   static constexpr size_t kFilterLength = kMatchedFilterWindowSizeSubBlocks * kSubBlockSize; // 各フィルタ長
@@ -204,7 +200,8 @@ struct MatchedFilter {
       (*error_sum) += e * e;
 
       if (x2_sum > x2_sum_threshold) {
-        const float alpha = kSmoothing * e / x2_sum;
+        // 平滑係数0.7fでNLMS更新
+        const float alpha = 0.7f * e / x2_sum;
         size_t adapt_index = x_start_index;
         for (size_t k = 0; k < h.size(); ++k) {
           h[k] += alpha * x[adapt_index];
@@ -222,8 +219,9 @@ struct MatchedFilter {
   void Update(const DownsampledRenderBuffer& render_buffer,
               std::span<const float> capture) {
 
+    // 励起不足で更新を止める閾値(入力パワー下限150.f)
     const float x2_sum_threshold =
-        filters_[0].size() * kExcitationLimit * kExcitationLimit;
+        filters_[0].size() * 150.f * 150.f;
 
     float error_sum_anchor = 0.0f;
     for (size_t k = 0; k < capture.size(); ++k) {
@@ -250,9 +248,10 @@ struct MatchedFilter {
                         &filters_updated, &error_sum);
 
       const size_t lag_estimate = MaxSquarePeakIndex(filters_[n]);
+      // 誤差がキャプチャパワーの0.2f未満なら信頼できる候補とする
       const bool reliable =
           lag_estimate > 2 && lag_estimate < (filters_[n].size() - 10) &&
-          error_sum < kMatchingFilterThreshold * error_sum_anchor;
+          error_sum < 0.2f * error_sum_anchor;
       const int lag = static_cast<int>(lag_estimate + alignment_shift);
 
       if (filters_updated && reliable && error_sum < winner_error_sum) {
@@ -325,8 +324,6 @@ struct HighestPeakAggregator {
 };
 // マッチドフィルタが出す遅延推定を集約し、信頼できる値を選び出す。
 struct MatchedFilterLagAggregator {
-  static constexpr int kInitialThreshold = 5;   // 未収束時に候補確定に必要な出現回数
-  static constexpr int kConvergedThreshold = 20; // 収束済み判定に必要な出現回数
   bool significant_candidate_found_ = false; // 収束と見なせる候補が見つかったか
   const int headroom_; // レンダー遅延の先行マージン（サンプル数）
   HighestPeakAggregator highest_peak_aggregator_; // ヒストグラム集約器
@@ -348,10 +345,11 @@ struct MatchedFilterLagAggregator {
       highest_peak_aggregator_.Aggregate(std::max(0, lag_estimate - headroom_));
       std::span<const int> histogram = highest_peak_aggregator_.histogram();
       int candidate = highest_peak_aggregator_.candidate();
+      // 未収束: 5回出現で確定。収束後: 20回出現で再確定。
       significant_candidate_found_ = significant_candidate_found_ ||
-                                     histogram[candidate] > kConvergedThreshold;
-      if (histogram[candidate] > kConvergedThreshold ||
-          (histogram[candidate] > kInitialThreshold &&
+                                     histogram[candidate] > 20;
+      if (histogram[candidate] > 20 ||
+          (histogram[candidate] > 5 &&
            !significant_candidate_found_)) {
         return candidate;
       }

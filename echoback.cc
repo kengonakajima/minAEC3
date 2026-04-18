@@ -116,13 +116,12 @@ static void process_available_blocks(State& s){
           s.erle_out_energy_accum += static_cast<double>(metrics.output_e2);
           s.erle_blocks_accum += 1;
           if (s.erle_blocks_accum >= static_cast<int>(kNumBlocksPerSecond)) {
-            constexpr double kEps = 1e-9;
             const double ein = s.erle_in_energy_accum;
             const double elin = s.erle_linear_energy_accum;
             const double eout = s.erle_out_energy_accum;
-            const double total_ratio = (ein + kEps) / (eout + kEps);
-            const double linear_ratio = (ein + kEps) / (elin + kEps);
-            const double nonlinear_ratio = (elin + kEps) / (eout + kEps);
+            const double total_ratio = (ein + 1e-9) / (eout + 1e-9);
+            const double linear_ratio = (ein + 1e-9) / (elin + 1e-9);
+            const double nonlinear_ratio = (elin + 1e-9) / (eout + 1e-9);
             const double total_db = 10.0 * std::log10(total_ratio);
             const double linear_db = 10.0 * std::log10(linear_ratio);
             const double nonlinear_db = 10.0 * std::log10(nonlinear_ratio);
