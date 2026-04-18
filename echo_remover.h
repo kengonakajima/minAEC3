@@ -53,7 +53,7 @@ struct EchoRemover {
     FftData Y; // 入力信号のFFT
     FftData E; // 残差信号のFFT
     SubtractorOutput subtractor_output; // 減算器の処理結果
-    std::span<float, kBlockSize> capture_view = y->View();
+    std::span<float, kBlockSize> capture_view(*y);
     std::span<const float> capture_view_const(capture_view.data(), capture_view.size());
 
     last_metrics_.valid = false;

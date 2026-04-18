@@ -89,10 +89,10 @@ static void process_available_blocks(State& s){
       std::memcpy(out.data(), rec.data(), s.block_size * sizeof(int16_t));
     } else {
       // AEC3 直結: Render/ Capture を渡して処理
-      s.cap_block.CopyFromPcm16(rec.data());
-      s.ref_block.CopyFromPcm16(ref.data());
+      CopyFromPcm16(rec.data(), &s.cap_block);
+      CopyFromPcm16(ref.data(), &s.ref_block);
       s.aec.ProcessBlock(&s.cap_block, &s.ref_block);
-      s.cap_block.CopyToPcm16(out.data());
+      CopyToPcm16(s.cap_block, out.data());
 
       // MatchedFilter による推定遅延が変化したら1行だけ通知。
       // BlockProcessor は推定遅延（ブロック数）を public 成員に保持している。

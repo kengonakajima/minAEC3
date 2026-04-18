@@ -34,14 +34,6 @@ static bool read_wav_pcm16(const std::string& path, Wav* out){
   return true;
 }
 
-static void CopyFromPcm16(const int16_t* src, Block* dst) {
-  dst->CopyFromPcm16(src);
-}
-
-static void CopyToPcm16(const Block& src, int16_t* dst) {
-  src.CopyToPcm16(dst);
-}
-
 int main(int argc, char** argv){
   if (argc < 3){ std::fprintf(stderr, "Usage: %s <render.wav> <capture.wav> [--no-linear] [--no-nonlinear]\n", argv[0]); return 1; }
   bool enable_linear = true, enable_nonlinear = true;

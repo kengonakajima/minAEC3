@@ -117,10 +117,10 @@ struct RenderDelayBuffer {
     FftBuffer& f = ffts_;
     SpectrumBuffer& s = spectra_;
     std::copy(block.begin(), block.end(), b.buffer[b.write].begin());
-    DecimateBy4(b.buffer[b.write].View(), ds);
+    DecimateBy4(b.buffer[b.write], ds);
     std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
-    fft_.PaddedFft(b.buffer[b.write].View(),
-                   b.buffer[previous_write].View(),
+    fft_.PaddedFft(b.buffer[b.write],
+                   b.buffer[previous_write],
                    &f.buffer[f.write]);
     f.buffer[f.write].Spectrum(s.buffer[s.write]);
   }

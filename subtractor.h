@@ -52,7 +52,7 @@ struct Subtractor {
     // キャプチャ信号（モノラル）の処理本体。
     {
       SubtractorOutput& out = *output; // 出力構造体への参照
-      std::span<const float> y = capture.View(); // 入力キャプチャ信号
+      std::span<const float> y = capture; // 入力キャプチャ信号
       FftData& E = out.E; // 残差信号の周波数表現
       std::array<float, kBlockSize>& e = out.e; // 残差信号の時間領域配列
 

@@ -24,7 +24,7 @@ struct EchoPathDelayEstimator {
     std::array<float, kBlockSize> downsampled_capture_data;
     std::span<float> downsampled_capture(downsampled_capture_data.data(),
                                          sub_block_size_);
-    DecimateBy4(capture.View(), downsampled_capture);
+    DecimateBy4(capture, downsampled_capture);
     matched_filter_.Update(render_buffer, downsampled_capture);
 
     int aggregated_matched_filter_lag =
