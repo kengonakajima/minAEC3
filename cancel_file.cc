@@ -42,7 +42,11 @@ int main(int argc, char** argv){
   if (!read_wav_pcm16(argv[1], &x) || !read_wav_pcm16(argv[2], &y)){ std::fprintf(stderr, "Failed to read wavs\n"); return 1; }
   if (x.sr!=16000 || y.sr!=16000 || x.ch!=1 || y.ch!=1){ std::fprintf(stderr, "Expected 16k mono wavs\n"); }
   size_t N = std::min(x.samples.size(), y.samples.size()) / kBlockSize;
-  BlockProcessor aec; aec.echo_remover_.SetProcessingModes(enable_linear, enable_nonlinear);
+  RenderDelayBuffer render_buffer;
+  EchoPathDelayEstimator delay_estimator;
+  EchoRemover echo_remover;
+  int estimated_delay_blocks = -1;
+  echo_remover.SetProcessingModes(enable_linear, enable_nonlinear);
   Block render_block;
   Block capture_block;
   std::vector<int16_t> processed;
@@ -50,11 +54,12 @@ int main(int argc, char** argv){
   for (size_t n=0;n<N;n++){
     CopyFromPcm16(&x.samples[n * kBlockSize], &render_block);
     CopyFromPcm16(&y.samples[n * kBlockSize], &capture_block);
-    aec.BufferRender(render_block);
-    aec.ProcessCapture(&capture_block);
+    render_buffer.Insert(render_block);
+    ProcessCaptureBlock(&render_buffer, &delay_estimator, &echo_remover,
+                        &estimated_delay_blocks, &capture_block);
     CopyToPcm16(capture_block, &processed[n * kBlockSize]);
-    const EchoRemover::LastMetrics& erm = aec.echo_remover_.last_metrics_;
-    int dblk = aec.estimated_delay_blocks_;
+    const EchoRemover::LastMetrics& erm = echo_remover.last_metrics_;
+    int dblk = estimated_delay_blocks;
     float dms = (dblk >= 0) ? (dblk * (1000.0f * static_cast<float>(kBlockSize) / 16000.0f)) : -1.0f; // 64 samples @16kHz = 4ms per block
     float ratio = (erm.y2 > 0.f) ? (erm.e2 / erm.y2) : 0.f;
     std::printf("block=%zu y2=%.6g e2=%.6g e2_over_y2=%.6g erle_avg=%.6g linear_usable=%d est_delay_blocks=%d est_delay_ms=%.6g\n",

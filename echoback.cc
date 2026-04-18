@@ -51,8 +51,11 @@ struct State {
   double erle_out_energy_accum = 0.0;
   int erle_blocks_accum = 0;  // 250ブロック ≒ 1秒
 
-  // AEC3 (BlockProcessor 直結) — 単一インスタンス固定
-  BlockProcessor aec;
+  // AEC3 — 3つの構成要素を直接保持
+  RenderDelayBuffer render_buffer;
+  EchoPathDelayEstimator delay_estimator;
+  EchoRemover echo_remover;
+  int estimated_delay_blocks = -1;
   Block ref_block;
   Block cap_block;
 };
@@ -91,13 +94,13 @@ static void process_available_blocks(State& s){
       // AEC3 直結: Render/ Capture を渡して処理
       CopyFromPcm16(rec.data(), &s.cap_block);
       CopyFromPcm16(ref.data(), &s.ref_block);
-      s.aec.BufferRender(s.ref_block);
-      s.aec.ProcessCapture(&s.cap_block);
+      s.render_buffer.Insert(s.ref_block);
+      ProcessCaptureBlock(&s.render_buffer, &s.delay_estimator, &s.echo_remover,
+                          &s.estimated_delay_blocks, &s.cap_block);
       CopyToPcm16(s.cap_block, out.data());
 
       // MatchedFilter による推定遅延が変化したら1行だけ通知。
-      // BlockProcessor は推定遅延（ブロック数）を public 成員に保持している。
-      int cur = s.aec.estimated_delay_blocks_;
+      int cur = s.estimated_delay_blocks;
       if (cur >= 0 && cur != s.last_logged_delay_blocks) {
         int ms = cur * 1000 / kNumBlocksPerSecond; // 1ブロック=4ms
         std::fprintf(stderr, "[AEC3] 推定遅延が変化: %d ブロック (約 %d ms)\n", cur, ms);
@@ -106,7 +109,7 @@ static void process_available_blocks(State& s){
 
       // 1秒に1回、線形/非線形別のキャンセル量（ERLE近似）を出力（dB）。
       {
-        const EchoRemover::LastMetrics& metrics = s.aec.echo_remover_.last_metrics_;
+        const EchoRemover::LastMetrics& metrics = s.echo_remover.last_metrics_;
         if (metrics.valid) {
           s.erle_in_energy_accum += static_cast<double>(metrics.y2);
           s.erle_linear_energy_accum += static_cast<double>(metrics.e2);
@@ -272,7 +275,7 @@ int main(int argc, char** argv){
   }
   // AECモード設定（passthrough時は意味なし）
   if (!s.passthrough) {
-    s.aec.echo_remover_.SetProcessingModes(!no_linear, !no_nonlinear);
+    s.echo_remover.SetProcessingModes(!no_linear, !no_nonlinear);
   }
   const char* mode = s.passthrough ? "passthrough" :
                      (no_linear && !no_nonlinear) ? "nonlinear-only" :

@@ -160,44 +160,34 @@ struct EchoRemover {
   
 };
 
-// Performs echo cancellation on 64-sample blocks.
-struct BlockProcessor {
-  BlockProcessor()
-      : render_buffer_(),
-        delay_estimator_(),
-        echo_remover_() {}
+// 1ブロック分のキャプチャ処理の流れ:
+//   1. レンダーバッファのキャプチャ側準備
+//   2. 遅延推定(サンプル→ブロック)
+//   3. バッファのアラインメント(推定遅延が変化したら echo_path_variability を通知)
+//   4. エコー除去本体
+inline void ProcessCaptureBlock(
+    RenderDelayBuffer* render_buffer,
+    EchoPathDelayEstimator* delay_estimator,
+    EchoRemover* echo_remover,
+    int* estimated_delay_blocks,  // 出力: 推定遅延(ブロック単位、未検出なら-1)
+    Block* capture_block) {
+  EchoPathVariability echo_path_variability = EchoPathVariability::kNone;
+  render_buffer->PrepareCaptureProcessing();
 
+  int d_samples = delay_estimator->EstimateDelay(
+      render_buffer->GetDownsampledRenderBuffer(), *capture_block);
+  *estimated_delay_blocks =
+      (d_samples >= 0) ? static_cast<int>(d_samples >> kBlockSizeLog2) : -1;
 
-  void ProcessCapture(Block* capture_block) {
-    EchoPathVariability echo_path_variability = EchoPathVariability::kNone;
-    render_buffer_.PrepareCaptureProcessing();
-
-    int d_samples = delay_estimator_.EstimateDelay(render_buffer_.GetDownsampledRenderBuffer(), *capture_block);
-    if (d_samples >= 0) {
-        estimated_delay_blocks_ = static_cast<int>(d_samples >> kBlockSizeLog2);
-    } else {
-        estimated_delay_blocks_ = -1;
+  if (*estimated_delay_blocks >= 0) {
+    bool delay_change = render_buffer->AlignFromDelay(
+        static_cast<size_t>(*estimated_delay_blocks));
+    if (delay_change) {
+      echo_path_variability = EchoPathVariability::kNewDetectedDelay;
     }
-
-    if (estimated_delay_blocks_ >= 0) {
-      bool delay_change = render_buffer_.AlignFromDelay(static_cast<size_t>(estimated_delay_blocks_));
-      if (delay_change) {
-        echo_path_variability = EchoPathVariability::kNewDetectedDelay;
-      }
-    }
-
-    echo_remover_.ProcessCapture(echo_path_variability,
-                                 render_buffer_.GetRenderBuffer(),
-                                 capture_block);
   }
 
-  // Buffers a 64-sample render block (directly supplied by the caller).
-  void BufferRender(const Block& render_block) {
-    render_buffer_.Insert(render_block);
-  }
-
-  RenderDelayBuffer render_buffer_;
-  EchoPathDelayEstimator delay_estimator_;
-  EchoRemover echo_remover_;
-  int estimated_delay_blocks_ = -1;
-};
+  echo_remover->ProcessCapture(echo_path_variability,
+                               render_buffer->GetRenderBuffer(),
+                               capture_block);
+}
