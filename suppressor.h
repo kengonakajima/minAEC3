@@ -49,25 +49,15 @@ struct ResidualEchoEstimator {
 // 残留エコーを抑圧する周波数帯ごとのゲインを計算する。
 struct SuppressionGain {
   std::array<float, kFftLengthBy2Plus1> last_gain_; // 前回適用したゲイン
-  std::array<float, kFftLengthBy2Plus1> last_nearend_; // 前回の近端スペクトル
-  std::array<float, kFftLengthBy2Plus1> last_echo_; // 前回の残留エコースペクトル
+  std::array<float, kFftLengthBy2Plus1> last_nearend_{}; // 前回の近端スペクトル
+  std::array<float, kFftLengthBy2Plus1> last_echo_{}; // 前回の残留エコースペクトル
 
   // 近端スペクトルを直近4ブロックで平均するための履歴(過去3ブロック分)
   std::array<std::array<float, kFftLengthBy2Plus1>, 3> nearend_history_{};
   size_t nearend_history_index_ = 0;
 
-  SuppressionGain() : last_nearend_(), last_echo_() {
+  SuppressionGain() {
     last_gain_.fill(1.f);
-  }
-
-  // 近端・エコー・残留エコーのスペクトルからゲインを算出する。
-  void GetGain(
-      const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
-      const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
-      const std::array<float, kFftLengthBy2Plus1>& residual_echo_spectrum,
-      std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
-    // 近端判定は行わない。下位帯域のみを計算。
-    LowerBandGain(nearend_spectrum, residual_echo_spectrum, low_band_gain);
   }
 
   // 可聴エコーが残らないようにゲインを制限する。
@@ -185,8 +175,8 @@ struct SuppressionFilter {
   void ApplyGain(const std::array<float, kFftLengthBy2Plus1>& suppression_gain,
                  const FftData& E_lowest_band,
                  Block* e) {
-    FftData E;
-    E.Assign(E_lowest_band);
+    FftData E = E_lowest_band;
+    E.im[0] = E.im[kFftLengthBy2] = 0;
     for (size_t i = 0; i < kFftLengthBy2Plus1; ++i) {
       E.re[i] *= suppression_gain[i];
       E.im[i] *= suppression_gain[i];

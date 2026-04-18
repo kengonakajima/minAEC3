@@ -24,11 +24,10 @@ struct SubtractorOutput {
 // エコーリターンロス強化（ERLE）を推定する。サブバンドごとの推定と全帯域の平均を管理。
 struct ErleEstimator {
 
-  const size_t startup_phase_length_blocks_; // スタートアップ期間として更新を抑制するブロック数
   std::array<float, kFftLengthBy2Plus1> erle_; // 周波数ビンごとのERLE推定値
   size_t blocks_since_reset_ = 0; // リセット後に経過したブロック数
-    
-  ErleEstimator(size_t startup_phase_length_blocks) : startup_phase_length_blocks_(startup_phase_length_blocks) {
+
+  ErleEstimator() {
     Reset();
   }
 
@@ -46,7 +45,8 @@ struct ErleEstimator {
               const std::array<float, kFftLengthBy2Plus1>& subtractor_spectrum) {
     const std::array<float, kFftLengthBy2Plus1>& Y2 = capture_spectrum;
     const std::array<float, kFftLengthBy2Plus1>& E2 = subtractor_spectrum;
-    if (++blocks_since_reset_ < startup_phase_length_blocks_) {
+    // スタートアップ期間(500ブロック=2秒)はERLE更新を抑制
+    if (++blocks_since_reset_ < 500) {
       return;
     }
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
@@ -63,7 +63,7 @@ struct ErleEstimator {
 
 // Echo remover の動作状態を管理。
 struct AecState {
-  AecState() : erle_estimator_(2 * kNumBlocksPerSecond) {}
+  AecState() = default;
 
   // エコー減算器の線形推定が残留エコー推定に利用できるかを返す。
   // 起動直後は線形フィルタが未収束なので非線形モードで動かし、

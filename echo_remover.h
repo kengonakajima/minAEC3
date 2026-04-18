@@ -134,9 +134,7 @@ struct EchoRemover {
     }
     const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum =
         aec_state_.UsableLinearEstimate() ? E2 : Y2;
-    const std::array<float, kFftLengthBy2Plus1>& echo_spectrum =
-        aec_state_.UsableLinearEstimate() ? S2_linear : R2;
-    suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2, &G);
+    suppression_gain_.LowerBandGain(nearend_spectrum, R2, &G);
     suppression_filter_.ApplyGain(G, Y_fft, y);
 
     // Metrics snapshot

@@ -15,13 +15,6 @@ struct FftData {
   std::array<float, kFftLengthBy2Plus1> re; // 実数部分
   std::array<float, kFftLengthBy2Plus1> im; // 虚数部分
     
-  // src内のデータをコピーする。
-  void Assign(const FftData& src) {
-    std::copy(src.re.begin(), src.re.end(), re.begin());
-    std::copy(src.im.begin(), src.im.end(), im.begin());
-    im[0] = im[kFftLengthBy2] = 0;
-  }
-
   // 虚数部をすべてクリアする。
   void Clear() {
     re.fill(0.f);
