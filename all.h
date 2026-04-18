@@ -22,4 +22,4 @@
 #include "delay_estimator.h"
 #include "subtractor.h"
 #include "suppressor.h"
-#include "echo_canceller3.h"
+#include "echo_remover.h"
